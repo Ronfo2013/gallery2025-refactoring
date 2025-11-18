@@ -1,13 +1,54 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regole per tutte le immagini caricate
-    match /{allPaths=**} {
-      // Permetti lettura pubblica (chiunque può vedere le immagini)
+    
+    // ============================================
+    // 🔒 HELPER FUNCTIONS
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isBrandOwner(brandId) {
+      return isAuthenticated() && 
+        firestore.exists(/databases/(default)/documents/superusers/$(request.auth.uid)) &&
+        firestore.get(/databases/(default)/documents/superusers/$(request.auth.uid)).data.brandId == brandId;
+    }
+    
+    // ============================================
+    // 🆕 MULTI-BRAND STORAGE RULES (MVP)
+    // ============================================
+    
+    // Brand-specific files (/brands/{brandId}/)
+    match /brands/{brandId}/{allPaths=**} {
+      // Lettura pubblica (gallery e assets pubblici)
       allow read: if true;
       
-      // Permetti scrittura a tutti (temporaneo - TODO: aggiungere autenticazione)
+      // Scrittura solo per owner del brand
+      allow write: if isBrandOwner(brandId);
+      
+      // Delete solo per owner
+      allow delete: if isBrandOwner(brandId);
+    }
+    
+    // ============================================
+    // 🔙 LEGACY STORAGE RULES (da migrare)
+    // ============================================
+    
+    // Regole per uploads legacy (sistema vecchio)
+    match /uploads/{allPaths=**} {
+      // Permetti lettura pubblica
+      allow read: if true;
+      
+      // Permetti scrittura (temporaneo - da rimuovere dopo migrazione)
       allow write: if true;
+    }
+    
+    // Config legacy
+    match /config/{allPaths=**} {
+      allow read: if true;
+      allow write: if true; // Temporaneo
     }
   }
 }

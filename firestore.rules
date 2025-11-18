@@ -1,12 +1,71 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regole per la collection 'gallery'
-    match /gallery/{document=**} {
-      // Permetti lettura pubblica (chiunque può vedere la gallery)
+    
+    // ============================================
+    // 🔒 HELPER FUNCTIONS
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isBrandOwner(brandId) {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/superusers/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/superusers/$(request.auth.uid)).data.brandId == brandId;
+    }
+    
+    // ============================================
+    // 🆕 MULTI-BRAND RULES (MVP)
+    // ============================================
+    
+    // Brands collection
+    match /brands/{brandId} {
+      // Lettura pubblica per visualizzare gallery
       allow read: if true;
       
-      // Permetti scrittura a tutti (temporaneo - TODO: aggiungere autenticazione)
+      // Scrittura solo per owner del brand
+      allow write: if isBrandOwner(brandId);
+      
+      // Albums sub-collection
+      match /albums/{albumId} {
+        // Lettura pubblica (gallery pubblica per MVP)
+        allow read: if true;
+        
+        // Scrittura solo per owner
+        allow write: if isBrandOwner(brandId);
+      }
+      
+      // Settings sub-collection
+      match /settings/{settingsId} {
+        // Lettura pubblica per visualizzare settings nella gallery
+        allow read: if true;
+        
+        // Scrittura solo per owner
+        allow write: if isBrandOwner(brandId);
+      }
+    }
+    
+    // Superusers collection
+    match /superusers/{userId} {
+      // Solo l'utente può leggere i propri dati
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Nessuna scrittura (gestita solo via Cloud Functions)
+      allow write: if false;
+    }
+    
+    // ============================================
+    // 🔙 LEGACY RULES (da migrare)
+    // ============================================
+    
+    // Regole per la collection 'gallery' (sistema vecchio)
+    match /gallery/{document=**} {
+      // Permetti lettura pubblica
+      allow read: if true;
+      
+      // Permetti scrittura a tutti (temporaneo - da rimuovere dopo migrazione)
       allow write: if true;
     }
   }

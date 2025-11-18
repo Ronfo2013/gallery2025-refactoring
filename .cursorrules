@@ -1,0 +1,202 @@
+# 🔨 Cursor Rules - Gallery2025 Refactoring
+
+## 🎯 Contesto Progetto
+
+Questo è un fork del progetto `gallery2025-project` creato per refactoring sicuro.
+
+**Obiettivi:**
+- Architettura modulare e scalabile
+- Performance ottimizzate
+- Code quality elevato
+- Testing completo
+
+## 📋 Convenzioni
+
+### File Naming:
+- Components: `PascalCase.tsx` (es. `PhotoCard.tsx`)
+- Hooks: `use*.ts` (es. `usePhotos.ts`)
+- Services: `*.service.ts` (es. `photo.service.ts`)
+- Utils: `camelCase.ts` (es. `formatDate.ts`)
+- Types: `*.types.ts` (es. `Photo.types.ts`)
+
+### Git Commits:
+```
+<type>(<scope>): <subject>
+
+Types: feat, fix, refactor, test, docs, style, perf, chore
+Example: feat(photos): add lazy loading for photo cards
+```
+
+### Code Style:
+- TypeScript strict mode
+- Max line length: 100 chars
+- Single quotes
+- 2 spaces indentation
+- Trailing commas
+
+## 🚫 Regole Importanti
+
+### DO ✅:
+1. Scrivi test PRIMA di refactorare codice legacy
+2. Commit frequenti e atomici
+3. Documenta mentre scrivi (JSDoc)
+4. Usa TypeScript strict (no `any`)
+5. Memoizza componenti pesanti
+6. Lazy load routes e componenti grandi
+
+### DON'T ❌:
+1. NO big bang rewrites
+2. NO breaking changes senza migration path
+3. NO dipendenze inutili
+4. NO duplicazione codice
+5. NO ignorare warning TypeScript/ESLint
+6. NO ottimizzazioni premature (profile first)
+
+## 🏗️ Architettura
+
+### Struttura Cartelle:
+```
+src/
+├── api/              # API clients
+├── components/       
+│   ├── common/       # Shared components
+│   ├── features/     # Feature-specific
+│   └── layout/       # Layout components
+├── hooks/            # Custom hooks
+├── models/           # TypeScript models
+├── pages/            # Page components
+├── services/         # Business logic
+├── store/            # State management
+└── utils/            # Pure functions
+```
+
+### Patterns da Usare:
+- **Components:** Compound components, render props quando serve
+- **State:** Zustand per global, useState per local
+- **Server State:** React Query per API calls
+- **Forms:** Controlled components + validation
+- **Error Handling:** Error boundaries + try/catch
+
+## 🧪 Testing
+
+### Coverage Target:
+- Services: 80%+
+- Hooks: 80%+
+- Utils: 100%
+- Components: 60%+
+
+### Test Naming:
+```typescript
+describe('PhotoCard', () => {
+  it('should render photo with title', () => {
+    // test
+  });
+  
+  it('should handle click event', () => {
+    // test
+  });
+});
+```
+
+## 🎨 Componenti React
+
+### Template Base:
+```typescript
+import { memo } from 'react';
+
+interface PhotoCardProps {
+  photo: Photo;
+  onSelect?: (id: string) => void;
+}
+
+/**
+ * Displays a photo card with thumbnail and metadata
+ */
+export const PhotoCard = memo<PhotoCardProps>(({ photo, onSelect }) => {
+  // Implementation
+});
+
+PhotoCard.displayName = 'PhotoCard';
+```
+
+### Ottimizzazioni:
+- Usa `memo` per componenti pesanti
+- `useCallback` per event handlers passati come props
+- `useMemo` per calcoli costosi
+- Lazy load immagini con Intersection Observer
+
+## 🔥 Firebase
+
+### Services Pattern:
+```typescript
+// services/firebase/storage.service.ts
+export class StorageService {
+  async uploadPhoto(file: File): Promise<UploadResult> {
+    // Implementation
+  }
+  
+  async deletePhoto(path: string): Promise<void> {
+    // Implementation
+  }
+}
+
+export const storageService = new StorageService();
+```
+
+### Best Practices:
+- Usa service layer per astrarre Firebase
+- Error handling consistente
+- Retry logic per network errors
+- Cache responses quando possibile
+
+## 📊 Performance
+
+### Bundle Size:
+- Target: < 500KB gzipped
+- Lazy load routes
+- Dynamic imports per admin panel
+- Tree shaking optimization
+
+### Rendering:
+- Virtual scrolling per liste lunghe (>100 items)
+- Debounce search inputs
+- Throttle scroll handlers
+- Optimize re-renders con React DevTools
+
+## 🔍 Code Review Checklist
+
+Prima di committare, verifica:
+- [ ] TypeScript compila senza errori
+- [ ] ESLint non ha warning
+- [ ] Test passano
+- [ ] Componenti documentati (JSDoc)
+- [ ] No console.log dimenticati
+- [ ] Performance acceptable (React DevTools Profiler)
+
+## 🚀 Deploy
+
+### Pre-Deploy:
+```bash
+# Validazione
+./pre-deploy-check.sh
+
+# Build e test
+npm run build
+npm run test
+
+# Deploy
+gcloud builds submit --config=cloudbuild.yaml
+```
+
+## 📚 Riferimenti
+
+- [REFACTORING_PLAN.md](./REFACTORING_PLAN.md) - Piano completo
+- [React Best Practices](https://react.dev/learn)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- Progetto originale: `/Users/angelo-mac/gallery2025-project`
+
+---
+
+**Aggiornato:** 18/11/2025
+**Status:** 🟢 ACTIVE
+

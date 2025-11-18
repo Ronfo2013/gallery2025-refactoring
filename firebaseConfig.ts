@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
 // Firebase configuration
 // Queste credenziali verranno prese dalle variabili d'ambiente
@@ -21,6 +22,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
+const functions = getFunctions(app);
 
 // 🚀 LOGICA DI CONNESSIONE AGLI EMULATORI
 // Questa sezione si attiva solo in ambiente di sviluppo locale (`make dev`)
@@ -45,6 +47,12 @@ if (import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true') {
     connectAuthEmulator(auth, `http://${authHost}`, { disableWarnings: true });
     console.log(`👤 Emulatore Auth connesso a: ${authHost}`);
 
+    // Emulatore Functions
+    const functionsHost = import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR_HOST || 'localhost:5001';
+    const [functionsIp, functionsPort] = functionsHost.split(':');
+    connectFunctionsEmulator(functions, functionsIp, parseInt(functionsPort, 10));
+    console.log(`⚡ Emulatore Functions connesso a: ${functionsHost}`);
+
   } catch (error) {
     console.error("❌ Errore durante la connessione agli emulatori:", error);
   }
@@ -54,6 +62,6 @@ if (import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true') {
 }
 
 // Esporta i servizi inizializzati
-export { auth, db, storage };
+export { auth, db, storage, functions };
 export default app;
 

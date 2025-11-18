@@ -55,3 +55,48 @@ export interface SiteSettings {
   geminiApiKey?: string; // Gemini API key for AI features
   preloader?: PreloaderSettings; // Preloader customization settings
 }
+
+// ============================================
+// 🆕 MULTI-BRAND TYPES (MVP)
+// ============================================
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string; // Unique, used for subdomain
+  subdomain: string; // e.g., "brand-name.yourdomain.com"
+  status: 'pending' | 'active' | 'suspended';
+  subscription: BrandSubscription;
+  branding: BrandBranding;
+  ownerEmail: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface BrandSubscription {
+  stripeCustomerId: string;
+  status: 'active' | 'canceled';
+  currentPeriodEnd: Date;
+}
+
+export interface BrandBranding {
+  logo?: string; // URL
+  logoPath?: string; // Storage path
+  primaryColor: string;
+  secondaryColor: string;
+  backgroundColor: string;
+}
+
+export interface SuperUser {
+  id: string; // Firebase Auth UID
+  email: string;
+  brandId: string; // Reference to brand
+  createdAt: Date;
+}
+
+// Extended Album with branding context
+export interface BrandAlbum extends Album {
+  brandId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

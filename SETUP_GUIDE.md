@@ -1,80 +1,430 @@
-# 🚀 Guida al Nuovo Setup di Sviluppo e Deploy Ottimizzato
+# 🚀 Setup Guide - Gallery2025 Refactoring
 
-Questo documento riassume le modifiche implementate per migliorare il workflow di sviluppo, testing e deploy del progetto AI Photo Gallery. Il sistema esistente non è stato modificato e rimane funzionante, ma questo nuovo setup offre vantaggi significativi in termini di velocità, consistenza e produttività.
-
----
-
-## 🎯 Obiettivi Raggiunti
-
-1.  **Velocità di Deploy Aumentata:** Deploy fino a 3 volte più veloci grazie a build ottimizzati e caching su Cloud Build.
-2.  **Consistenza tra Ambienti:** L'ambiente di sviluppo locale ora simula perfettamente l'ambiente di produzione di Cloud Run, eliminando il problema del "funziona solo sulla mia macchina".
-3.  **Semplificazione dei Comandi:** Comandi complessi sono stati astratti in semplici scorciatoie tramite `Makefile`.
-4.  **Sviluppo Integrato:** Un unico comando avvia e gestisce tutti i servizi necessari (frontend, backend, emulatori Firebase).
-5.  **Dati Persistenti in Locale:** I dati inseriti negli emulatori (Auth, Firestore, Storage) vengono salvati e ricaricati ad ogni sessione di sviluppo.
+**Quick start guide per iniziare lo sviluppo**
 
 ---
 
-## 📁 File Aggiunti
+## ✅ Prerequisiti
 
-Sono stati aggiunti i seguenti file di configurazione. **Nessun file di progetto esistente è stato modificato.**
+Prima di iniziare, assicurati di avere:
 
-| File | Scopo |
-| :--- | :--- |
-| `Makefile` | Contiene scorciatoie per i comandi più comuni (es. `make dev`). |
-| `cloudbuild.yaml` | Istruzioni per Google Cloud Build per un deploy automatizzato e veloce. |
-| `docker-compose.dev.yml` | Definisce e orchestra i servizi per l'ambiente di sviluppo locale (frontend, backend, Firebase). |
-| `Dockerfile.optimized` | Dockerfile ottimizzato per la produzione, usato da `cloudbuild.yaml`. |
-| `Dockerfile.dev` | Dockerfile per il container del backend Node.js in sviluppo. |
-| `Dockerfile.frontend-dev`| Dockerfile per il container del frontend Vite in sviluppo. |
-| `.vscode/` | Cartella con configurazioni per Cursor/VSCode per un'esperienza di sviluppo migliorata (tasks, debug, estensioni raccomandate). |
-| `env.local.example` | Template per il file `.env.local` necessario per le configurazioni locali. |
-| `SETUP_OTTIMIZZATO_COMPLETATO.md` | Documento di riepilogo finale. |
+- [x] **Node.js** >= 20.x (consigliato 22.x)
+- [x] **npm** >= 10.x
+- [x] **Git** >= 2.40
+- [x] **Google Cloud SDK** (gcloud CLI)
+- [x] **Firebase CLI** >= 13.x
+- [x] **Docker** (opzionale, per test locali)
 
----
-
-## 🚀 Guida Rapida ai Nuovi Comandi
-
-### 1. Setup Iniziale (da fare solo una volta)
-
-Questo comando prepara il tuo ambiente, installa le dipendenze e crea il file di configurazione locale.
+### Verifica Installazioni:
 
 ```bash
-make setup
+node --version    # Should be >= 20.x
+npm --version     # Should be >= 10.x
+git --version
+gcloud --version
+firebase --version
 ```
-*(Ricordati di compilare il file `.env.local` che viene creato con le tue chiavi, se necessario).*
-
-### 2. Sviluppo Quotidiano
-
-Questo è **l'unico comando che ti serve per iniziare a lavorare**. Avvia frontend, backend ed emulatori Firebase con hot-reload.
-
-```bash
-make dev
-```
-Per fermare tutto, premi `Ctrl+C`.
-
-### 3. Deploy in Produzione
-
-Questo è **l'unico comando che ti serve per deployare**. Usa il processo ottimizzato con Cloud Build.
-
-```bash
-make deploy
-```
-
-### 4. Altri Comandi Utili
-
-| Comando | Descrizione |
-| :--- | :--- |
-| `make stop` | Ferma i container Docker in esecuzione. |
-| `make clean` | Pulisce i file generati e i container Docker. |
-| `make logs` | Mostra i log di tutti i servizi in tempo reale. |
-| `make status`| Controlla lo stato dei servizi Docker. |
-| `make help` | Mostra la lista di tutti i comandi disponibili. |
 
 ---
 
-## 🤔 Come Funziona l'Isolamento tra Sviluppo e Produzione?
+## 📦 Installazione
 
--   **Sviluppo (`make dev`):** Utilizza `docker-compose.dev.yml` per avviare i **servizi emulati** di Firebase in locale. Il codice si connette a `localhost` perché la variabile d'ambiente `VITE_FIREBASE_USE_EMULATOR` è impostata a `true`. I dati sono salvati localmente.
--   **Produzione (`make deploy`):** Utilizza `cloudbuild.yaml` e `Dockerfile.optimized`. La variabile `VITE_FIREBASE_USE_EMULATOR` non è presente, quindi il codice si connette ai **servizi Firebase reali** nel cloud usando le credenziali di produzione.
+### 1. Dipendenze Root
 
-**Non c'è alcun rischio di conflitto tra i dati locali e quelli di produzione.** I due ambienti sono completamente separati e isolati.
+```bash
+cd /Users/angelo-mac/gallery2025-refactoring
+
+# Installa dipendenze frontend
+npm install
+
+# Installa dipendenze ESLint e Prettier (se non già presenti)
+npm install -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin \
+  eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y \
+  prettier eslint-config-prettier
+```
+
+### 2. Dipendenze Server
+
+```bash
+cd server
+npm install
+cd ..
+```
+
+### 3. Dipendenze Firebase Functions
+
+```bash
+cd functions
+npm install
+cd ..
+```
+
+---
+
+## ⚙️ Configurazione
+
+### 1. Environment Variables
+
+```bash
+# Copia il file di esempio
+cp .env.local.example .env.local
+
+# Modifica con le tue credenziali
+nano .env.local
+```
+
+**Variabili richieste in `.env.local`:**
+
+```env
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Gemini API (opzionale)
+VITE_GEMINI_API_KEY=your_gemini_key
+```
+
+### 2. Firebase Setup
+
+```bash
+# Login Firebase (se necessario)
+firebase login
+
+# Seleziona progetto
+firebase use gen-lang-client-0873479092
+
+# Verifica configurazione
+firebase projects:list
+```
+
+### 3. Google Cloud Setup
+
+```bash
+# Login Google Cloud (se necessario)
+gcloud auth login
+
+# Imposta progetto
+gcloud config set project gen-lang-client-0873479092
+
+# Verifica
+gcloud config list
+```
+
+---
+
+## 🏃 Avvio Sviluppo
+
+### Opzione 1: Frontend + Server Insieme
+
+```bash
+npm run dev
+```
+
+Questo avvierà:
+- Frontend su `http://localhost:5173`
+- Server su `http://localhost:3000`
+
+### Opzione 2: Solo Frontend
+
+```bash
+npm run dev:frontend
+```
+
+### Opzione 3: Solo Server
+
+```bash
+cd server
+npm run dev
+```
+
+### Opzione 4: Firebase Functions (Locale)
+
+```bash
+# Avvia emulatori Firebase
+firebase emulators:start
+
+# In un altro terminale, avvia frontend
+npm run dev
+```
+
+---
+
+## 🧪 Testing
+
+### Setup Testing (Da fare)
+
+```bash
+# Installa Vitest e dipendenze
+npm install -D vitest @vitest/ui @testing-library/react \
+  @testing-library/jest-dom @testing-library/user-event \
+  jsdom happy-dom
+```
+
+### Run Tests
+
+```bash
+# Unit tests
+npm run test
+
+# Watch mode
+npm run test:watch
+
+# Coverage
+npm run test:coverage
+
+# UI
+npm run test:ui
+```
+
+---
+
+## 🔍 Linting e Formatting
+
+### ESLint
+
+```bash
+# Check errori
+npm run lint
+
+# Fix automatico
+npm run lint:fix
+```
+
+### Prettier
+
+```bash
+# Check formatting
+npm run format:check
+
+# Format automatico
+npm run format
+```
+
+### Pre-commit Hook (Da configurare)
+
+```bash
+# Installa Husky
+npm install -D husky lint-staged
+
+# Setup hooks
+npx husky install
+npx husky add .husky/pre-commit "npx lint-staged"
+```
+
+---
+
+## 🏗️ Build
+
+### Development Build
+
+```bash
+npm run build:dev
+```
+
+### Production Build
+
+```bash
+npm run build
+```
+
+### Preview Build Locale
+
+```bash
+npm run preview
+```
+
+### Analisi Bundle
+
+```bash
+npm run build:analyze
+```
+
+---
+
+## 🐳 Docker (Opzionale)
+
+### Build Immagine
+
+```bash
+# Build con Dockerfile.optimized
+docker build -f Dockerfile.optimized -t gallery2025-refactoring .
+```
+
+### Run Container
+
+```bash
+docker run -p 3000:3000 \
+  -e PORT=3000 \
+  -e NODE_ENV=production \
+  gallery2025-refactoring
+```
+
+### Docker Compose (Dev)
+
+```bash
+docker-compose -f docker-compose.dev.yml up
+```
+
+---
+
+## 🌐 Deploy
+
+### Pre-Deploy Check
+
+```bash
+# Esegui validazione
+./pre-deploy-check.sh
+
+# Se passa, procedi con il deploy
+```
+
+### Deploy su Cloud Run
+
+```bash
+# Deploy completo via Cloud Build
+gcloud builds submit --config=cloudbuild.yaml
+
+# Verifica deployment
+gcloud run services list
+curl -I https://ai-photo-gallery-595991638389.us-west1.run.app/
+```
+
+### Deploy Firebase Functions
+
+```bash
+cd functions
+firebase deploy --only functions
+```
+
+---
+
+## 🛠️ Tool Consigliati
+
+### VS Code Extensions
+
+```json
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    "eamodio.gitlens"
+  ]
+}
+```
+
+### Chrome Extensions
+
+- React Developer Tools
+- Redux DevTools (se usi Redux)
+- Lighthouse
+
+---
+
+## 🐛 Troubleshooting
+
+### Problema: `npm install` fallisce
+
+**Soluzione:**
+```bash
+# Pulisci cache
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Problema: Port 5173 già in uso
+
+**Soluzione:**
+```bash
+# Trova processo
+lsof -ti:5173
+
+# Killa processo
+kill -9 $(lsof -ti:5173)
+
+# Oppure usa porta diversa
+npm run dev -- --port 5174
+```
+
+### Problema: Firebase auth non funziona
+
+**Soluzione:**
+```bash
+# Verifica configurazione
+firebase projects:list
+firebase use gen-lang-client-0873479092
+
+# Re-login se necessario
+firebase login --reauth
+```
+
+### Problema: TypeScript errors dopo installazione
+
+**Soluzione:**
+```bash
+# Rigenera types
+npm run build
+
+# Riavvia TypeScript server in VS Code
+# Cmd+Shift+P > "TypeScript: Restart TS Server"
+```
+
+---
+
+## 📚 Prossimi Passi
+
+Dopo il setup, segui il [REFACTORING_PLAN.md](./REFACTORING_PLAN.md):
+
+1. [ ] Crea branch `develop`
+2. [ ] Setup testing framework (Vitest)
+3. [ ] Configura Husky per pre-commit hooks
+4. [ ] Inizia refactoring componenti base
+5. [ ] Implementa service layer
+
+---
+
+## 🔗 Link Utili
+
+- **Progetto Originale:** `/Users/angelo-mac/gallery2025-project`
+- **Firebase Console:** https://console.firebase.google.com/project/gen-lang-client-0873479092
+- **Google Cloud Console:** https://console.cloud.google.com/run?project=gen-lang-client-0873479092
+- **Deployed App:** https://ai-photo-gallery-595991638389.us-west1.run.app
+
+---
+
+## 📞 Supporto
+
+### Comandi Utili
+
+```bash
+# Status progetto
+git status
+npm run lint
+npm run type-check
+
+# Logs Cloud Run
+gcloud logging tail "resource.type=cloud_run_revision"
+
+# Firebase logs
+firebase functions:log
+
+# Pulisci tutto
+npm run clean  # (da creare)
+rm -rf node_modules server/node_modules functions/node_modules
+rm -rf dist .firebase .cache
+```
+
+---
+
+**Creato:** 18/11/2025  
+**Aggiornato:** 18/11/2025  
+**Status:** ✅ READY FOR DEVELOPMENT
+

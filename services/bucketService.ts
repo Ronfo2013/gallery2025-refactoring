@@ -156,13 +156,16 @@ export const saveConfig = async (config: AppConfig): Promise<void> => {
 };
 
 /**
- * Upload file to Cloud Storage
+ * Upload file to Cloud Storage (Multi-Brand)
  * Returns URLs for original and processed versions (processed by Cloud Function)
  * 
  * OPTIMIZATION: No client-side conversion - uploads original directly
  * Cloud Function will handle WebP conversion and thumbnail generation
+ * 
+ * @param file - File to upload
+ * @param brandId - Brand ID for multi-tenant isolation
  */
-export const uploadFile = async (file: File): Promise<{ 
+export const uploadFile = async (file: File, brandId: string): Promise<{ 
     path: string, 
     url: string,
     optimizedUrl?: string,
@@ -174,14 +177,15 @@ export const uploadFile = async (file: File): Promise<{
         const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '') || 'file';
         
         // Generate unique path with UUID to prevent collisions
+        // MULTI-BRAND: Use brands/{brandId}/uploads/ path
         const uniqueId = crypto.randomUUID().slice(0, 8);
-        const path = `uploads/${Date.now()}-${uniqueId}-${safeName}`;
+        const path = `brands/${brandId}/uploads/${Date.now()}-${uniqueId}-${safeName}`;
         
         // Create a reference to the file location
         const storageRef = ref(storage, path);
         
         // Upload original file directly (no conversion)
-        console.log(`⬆️ Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+        console.log(`⬆️ Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB) for brand ${brandId}...`);
         await uploadBytes(storageRef, file);
         
         // Get the download URL

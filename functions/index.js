@@ -1,8 +1,10 @@
 /**
- * Cloud Functions for AI Photo Gallery - Simplified Version
+ * Cloud Functions for AI Photo Gallery - Multi-Brand MVP
  *
- * This function automatically generates optimized thumbnails when images are uploaded
- * to Firebase Storage and updates Firestore with the URLs for instant UI updates.
+ * Includes:
+ * - Image thumbnail generation (existing)
+ * - Stripe integration (new)
+ * - Brand activation (new)
  */
 
 const functions = require("firebase-functions");
@@ -14,6 +16,17 @@ const fs = require("fs");
 
 // Initialize Firebase Admin
 admin.initializeApp();
+
+// ============================================
+// 🆕 STRIPE FUNCTIONS (MVP)
+// ============================================
+const stripeFunctions = require('./stripe-functions');
+exports.createCheckoutSession = stripeFunctions.createCheckoutSession;
+exports.handleStripeWebhook = stripeFunctions.handleStripeWebhook;
+
+// ============================================
+// 🖼️ IMAGE PROCESSING FUNCTIONS
+// ============================================
 
 /**
  * Generate optimized WebP + thumbnails when a new image is uploaded
@@ -33,11 +46,21 @@ exports.generateThumbnails = functions
 
     console.log("🖼️ File uploaded:", filePath);
 
-    // Exit conditions
-    if (!filePath.startsWith("uploads/")) {
-      console.log("⏭️ Skipping: Not in uploads directory");
+    // Exit conditions - MULTI-BRAND: Check for brands path
+    if (!filePath.startsWith("brands/")) {
+      console.log("⏭️ Skipping: Not in brands directory");
       return null;
     }
+
+    // Extract brandId from path: brands/{brandId}/uploads/{file}
+    const pathParts = filePath.split('/');
+    if (pathParts.length < 4 || pathParts[2] !== 'uploads') {
+      console.log("⏭️ Skipping: Invalid brands path structure");
+      return null;
+    }
+    
+    const brandId = pathParts[1];
+    console.log("📦 Processing for brand:", brandId);
 
     if (!contentType || !contentType.startsWith("image/")) {
       console.log("⏭️ Skipping: Not an image file");
@@ -143,46 +166,45 @@ exports.generateThumbnails = functions
 
       console.log("🎉 All images processed successfully");
 
-      // Update Firestore
+      // Update Firestore - MULTI-BRAND
       try {
-        console.log("📝 Updating Firestore with thumbnail URLs...");
+        console.log("📝 Updating Firestore for brand:", brandId);
 
         const db = admin.firestore();
-        const configRef = db.collection("gallery").doc("config");
-        const configDoc = await configRef.get();
+        const albumsRef = db.collection('brands').doc(brandId).collection('albums');
+        const albumsSnapshot = await albumsRef.get();
 
-        if (configDoc.exists) {
-          const config = configDoc.data();
-          let photoUpdated = false;
+        let photoUpdated = false;
 
-          if (config.albums && Array.isArray(config.albums)) {
-            config.albums.forEach((album, albumIndex) => {
-              if (album.photos && Array.isArray(album.photos)) {
-                album.photos.forEach((photo, photoIndex) => {
-                  if (photo.path === filePath) {
-                    config.albums[albumIndex].photos[photoIndex] = {
-                      ...photo,
-                      ...generatedUrls,
-                    };
-                    photoUpdated = true;
-                    console.log(
-                      `✅ Updated photo ${photo.id} with thumbnail URLs`
-                    );
-                  }
-                });
+        for (const albumDoc of albumsSnapshot.docs) {
+          const album = albumDoc.data();
+          
+          if (album.photos && Array.isArray(album.photos)) {
+            let updated = false;
+            
+            const updatedPhotos = album.photos.map(photo => {
+              if (photo.path === filePath) {
+                photoUpdated = true;
+                updated = true;
+                console.log(`✅ Updated photo ${photo.id} with thumbnail URLs`);
+                return { ...photo, ...generatedUrls };
               }
+              return photo;
             });
-          }
-
-          if (photoUpdated) {
-            await configRef.set(config);
-            console.log(
-              "🎉 Firestore updated successfully! UI will refresh instantly."
-            );
-          } else {
-            console.log("⚠️ Photo not found in Firestore config");
+            
+            if (updated) {
+              await albumDoc.ref.update({ photos: updatedPhotos });
+              console.log(`✅ Updated album ${albumDoc.id}`);
+            }
           }
         }
+
+        if (!photoUpdated) {
+          console.log("⚠️ Photo not found in any album");
+        } else {
+          console.log("🎉 Firestore updated successfully! UI will refresh instantly.");
+        }
+        
       } catch (firestoreError) {
         console.error("❌ Error updating Firestore:", firestoreError);
       }
@@ -222,8 +244,9 @@ exports.deleteThumbnails = functions
     const fileName = path.basename(filePath);
     const fileDir = path.dirname(filePath);
 
+    // MULTI-BRAND: Check for brands path
     if (
-      !filePath.startsWith("uploads/") ||
+      !filePath.startsWith("brands/") ||
       fileName.includes("_thumb_") ||
       fileName.includes("_optimized")
     ) {
