@@ -28,7 +28,7 @@ Stripe Configuration:
 ✅ Secret Key: Configurata
 ✅ Product ID: prod_TS1EaWokTNEIY1
 ✅ Price ID: price_1SV7C57Nfv04qQ7Yp8mfqCOg (€29/mese)
-✅ Webhook Secret: whsec_4EnQUredNMH1r8YVAK3DMjEdE5yxCWvc
+✅ Webhook Secret: whsec_***REDACTED***
 ✅ Webhook URL: https://us-west1-gallery-app-972f9.cloudfunctions.net/handleStripeWebhook
 
 Firebase Rules:

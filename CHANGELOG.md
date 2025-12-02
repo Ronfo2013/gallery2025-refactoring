@@ -213,7 +213,7 @@ Tutte le correzioni e miglioramenti significativi vengono tracciati qui con data
 
 - **RISOLTO PROBLEMA CRITICO:** `.env.production` conteneva credenziali del vecchio progetto Firebase (`gen-lang-client-0873479092`)
 - **Fix:** Aggiornato `.env.production` con credenziali corrette del progetto `gallery-app-972f9`
-- **Rebuild:** Nuovo bundle `main-DS1WE3f6.js` con API key corretta (`AIzaSyD3v3wjwDE9N_yCZ4P3Rr2DqqUpojiKAJE`)
+- **Rebuild:** Nuovo bundle `main-DS1WE3f6.js` con API key corretta (**_REDACTED_**)
 - **Deploy completato:** Frontend deployato su `gallery-app-972f9.web.app` con credenziali corrette
 - **SuperAdmin creato:** `info@benhanced.it` / `SuperAdmin2025!` (UID: `zSpeNfvdUMS5UThmLsXNei2hMJi2`)
 - **Routing multi-tenant:** Fix gestione route speciali (`/#/superadmin`, `/#/dashboard`) anche senza brand
