@@ -27,8 +27,8 @@ service firebase.storage {
     
     // Brand-specific files (/brands/{brandId}/)
     match /brands/{brandId}/{allPaths=**} {
-      // Lettura pubblica (gallery e assets pubblici)
-      allow read: if true;
+      // Lettura consentita solo a owner del brand o SuperAdmin
+      allow read: if isBrandOwner(brandId) || isSuperAdmin();
       
       // Scrittura per owner del brand o SuperAdmin
       allow write: if isBrandOwner(brandId) || isSuperAdmin();
@@ -46,14 +46,15 @@ service firebase.storage {
       // Permetti lettura pubblica
       allow read: if true;
       
-      // Permetti scrittura (temporaneo - da rimuovere dopo migrazione)
-      allow write: if true;
+      // Scrittura consentita solo ad utenti autenticati (più sicuro in produzione)
+      allow write: if isAuthenticated();
     }
     
     // Config legacy
     match /config/{allPaths=**} {
       allow read: if true;
-      allow write: if true; // Temporaneo
+      // Scrittura consentita solo ai SuperAdmin (o al backend tramite Admin SDK)
+      allow write: if isSuperAdmin();
     }
 
     // Landing page assets (hero/background, branding uploads)
