@@ -5,13 +5,13 @@ export interface Photo {
   thumbUrl?: string; // 200x200px thumbnail for grid view
   mediumUrl?: string; // 800x800px thumbnail for detail view
   title: string;
-  description:string;
+  description: string;
   path?: string; // Path in the bucket for deletion
   needsWebPRetry?: boolean; // 🏷️ Flag for photos that need WebP retry
 }
 
 export interface Album {
-  id:string;
+  id: string;
   title: string;
   coverPhotoUrl: string;
   photos: Photo[];
@@ -28,6 +28,146 @@ export interface SeoSettings {
   metaDescription: string;
   metaKeywords: string;
   structuredData: string; // JSON-LD
+}
+
+// ============================================
+// LANDING PAGE TYPES
+// ============================================
+
+export interface LandingHeroSettings {
+  title: string;
+  subtitle: string;
+  ctaText: string;
+  ctaUrl: string;
+  backgroundImage?: string;
+  backgroundImagePath?: string;
+  backgroundVideo?: string;
+}
+
+export interface LandingFeatureItem {
+  id: string;
+  icon: string; // Lucide icon name or emoji
+  title: string;
+  description: string;
+  order: number;
+}
+
+export interface LandingFeaturesSettings {
+  title: string;
+  subtitle: string;
+  items: LandingFeatureItem[];
+}
+
+export interface LandingPricingPlan {
+  id: string;
+  name: string;
+  price: number;
+  currency: string;
+  interval: 'one-time' | 'monthly' | 'yearly';
+  features: string[];
+  highlighted: boolean;
+  ctaText: string;
+  stripeProductId: string;
+  stripePriceId: string;
+  order: number;
+}
+
+export interface LandingPricingSettings {
+  title: string;
+  subtitle: string;
+  plans: LandingPricingPlan[];
+}
+
+export interface LandingTestimonialItem {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  avatar?: string;
+  avatarPath?: string;
+  text: string;
+  rating: number;
+  order: number;
+}
+
+export interface LandingTestimonialsSettings {
+  enabled: boolean;
+  title: string;
+  items: LandingTestimonialItem[];
+}
+
+export interface LandingGalleryImage {
+  id: string;
+  url: string;
+  urlPath?: string;
+  title: string;
+  order: number;
+}
+
+export interface LandingGallerySettings {
+  enabled: boolean;
+  title: string;
+  subtitle: string;
+  style: 'mockup' | 'live-demo' | 'both';
+  mockupImage?: string;
+  mockupImagePath?: string;
+  demoImages: LandingGalleryImage[];
+}
+
+export interface LandingFooterLink {
+  id: string;
+  label: string;
+  url: string;
+  order: number;
+}
+
+export interface LandingFooterSettings {
+  companyName: string;
+  tagline: string;
+  social: {
+    facebook?: string;
+    instagram?: string;
+    twitter?: string;
+    linkedin?: string;
+    github?: string;
+  };
+  contact: {
+    email: string;
+    phone?: string;
+    address?: string;
+  };
+  links: LandingFooterLink[];
+  copyright: string;
+}
+
+export interface LandingBrandingSettings {
+  logo?: string;
+  logoPath?: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  fontFamily?: string;
+}
+
+export interface LandingSeoSettings {
+  title: string;
+  description: string;
+  keywords: string[];
+  ogImage?: string;
+  ogImagePath?: string;
+}
+
+export interface LandingPageSettings {
+  hero: LandingHeroSettings;
+  features: LandingFeaturesSettings;
+  gallery?: LandingGallerySettings;
+  pricing: LandingPricingSettings;
+  testimonials?: LandingTestimonialsSettings;
+  footer: LandingFooterSettings;
+  branding: LandingBrandingSettings;
+  seo: LandingSeoSettings;
+  updatedAt?: any; // Firestore Timestamp
+  updatedBy?: string; // SuperAdmin UID
 }
 
 export interface PreloaderSettings {
@@ -67,8 +207,12 @@ export interface Brand {
   subdomain: string; // e.g., "brand-name.yourdomain.com"
   status: 'pending' | 'active' | 'suspended';
   subscription: BrandSubscription;
-  branding: BrandBranding;
+  branding?: BrandBranding; // Optional for safety
   ownerEmail: string;
+  phone?: string;
+  address?: string;
+  superuserId?: string; // Firebase Auth UID of the superuser
+  temporaryPassword?: string; // Temporary password (only shown once after creation)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -90,8 +234,11 @@ export interface BrandBranding {
 export interface SuperUser {
   id: string; // Firebase Auth UID
   email: string;
-  brandId: string; // Reference to brand
+  brandId?: string; // Legacy: single brand reference (deprecated)
+  brandIds: string[]; // Multi-brand support: array of brand IDs
+  activeBrandId?: string; // Currently selected brand (cached in localStorage)
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 // Extended Album with branding context
@@ -99,4 +246,149 @@ export interface BrandAlbum extends Album {
   brandId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ============================================
+// 🔐 SUPERADMIN & PLATFORM SETTINGS
+// ============================================
+
+/**
+ * Platform-wide settings (managed by SuperAdmin)
+ * Stored in Firestore: /platform_settings/config
+ */
+export interface PlatformSettings {
+  // System Info
+  systemName: string; // Nome del sistema SaaS
+  systemVersion: string; // Versione (per tracking deploy)
+  systemStatus: 'operational' | 'maintenance' | 'degraded'; // Health status
+  maintenanceMessage?: string; // Messaggio da mostrare durante maintenance
+
+  // SEO & Marketing
+  seo: {
+    metaTitle: string;
+    metaDescription: string;
+    metaKeywords: string;
+    ogImage?: string; // Open Graph image
+    structuredData?: string; // JSON-LD per rich snippets
+    robotsTxt?: string; // Custom robots.txt
+    // SEO for AI Search Engines
+    aiSearchOptimization: {
+      enabled: boolean;
+      summaryText?: string; // Breve descrizione per AI
+      keyFeatures: string[]; // Feature list per AI understanding
+      targetAudience?: string; // Chi è il target
+    };
+  };
+
+  // Company/Fiscal Info
+  company: {
+    name: string;
+    vatNumber?: string; // Partita IVA
+    taxCode?: string; // Codice Fiscale
+    address?: string;
+    city?: string;
+    country?: string;
+    email: string;
+    phone?: string;
+    pec?: string; // PEC per fatturazione elettronica
+  };
+
+  // Stripe Configuration
+  stripe: {
+    priceId: string; // Stripe Price ID for subscription
+    productId: string; // Stripe Product ID
+    webhookConfigured: boolean; // Se webhook è configurato
+    testMode: boolean; // Se in test mode o production
+  };
+
+  // Pricing
+  pricing: {
+    monthlyPrice: number; // Prezzo mensile in euro
+    currency: string; // EUR, USD, etc.
+    trialDays?: number; // Giorni di trial gratuito
+    features: string[]; // Lista features incluse nel piano
+  };
+
+  // Alerts & Notifications
+  alerts: {
+    criticalErrors: number; // Numero errori critici
+    lastErrorTimestamp?: Date;
+    emailNotifications: boolean; // Se inviare email per errori
+    notificationEmail?: string; // Email per notifiche
+  };
+
+  // Analytics & Monitoring
+  analytics: {
+    googleAnalyticsId?: string; // GA4 per landing page
+    totalBrands: number; // Numero totale brand registrati
+    activeBrands: number; // Brand attivi (con subscription attiva)
+    totalRevenue: number; // Revenue totale (calcolato)
+    monthlyRevenue: number; // Revenue mensile
+  };
+
+  // Feature Flags
+  features: {
+    allowSignup: boolean; // Se permettere nuove registrazioni
+    allowCustomDomains: boolean; // Se permettere domini custom
+    allowGoogleOAuth: boolean; // Se permettere login Google per end users
+    maintenanceMode: boolean; // Se in manutenzione
+  };
+
+  // Timestamps
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * SuperAdmin user (platform owner)
+ * Stored in Firestore: /superadmins/{uid}
+ */
+export interface SuperAdmin {
+  id: string; // Firebase Auth UID
+  email: string;
+  role: 'owner' | 'admin'; // owner = creatore, admin = altri admin
+  permissions: {
+    canManageBrands: boolean;
+    canManageSettings: boolean;
+    canViewAnalytics: boolean;
+    canManageStripe: boolean;
+  };
+  createdAt: Date;
+  lastLogin?: Date;
+}
+
+/**
+ * System Health Metrics
+ * Real-time data from Cloud Monitoring/Functions
+ */
+export interface SystemHealth {
+  status: 'healthy' | 'degraded' | 'down';
+  uptime: number; // Percentuale uptime
+  responseTime: number; // Tempo medio risposta (ms)
+  errorRate: number; // Percentuale errori
+  activeUsers: number; // Utenti attivi ora
+  cloudRunStatus: 'running' | 'stopped' | 'deploying';
+  firestoreStatus: 'operational' | 'degraded';
+  storageStatus: 'operational' | 'degraded';
+  functionsStatus: 'operational' | 'degraded';
+  lastCheck: Date;
+}
+
+/**
+ * Activity Log Entry
+ * Per tracciare azioni critiche nel sistema
+ */
+export interface ActivityLog {
+  id: string;
+  timestamp: Date;
+  type:
+    | 'brand_created'
+    | 'brand_suspended'
+    | 'settings_updated'
+    | 'payment_received'
+    | 'error_critical';
+  actor: string; // Email dell'attore (superadmin o "system")
+  brandId?: string; // Se relativo a un brand
+  description: string;
+  metadata?: Record<string, any>; // Dati aggiuntivi
 }

@@ -30,6 +30,9 @@ dist-ssr/
 firebase-debug.log
 firestore-debug.log
 firebase-export
+firebase-admin-key.json
+*-service-account.json
+service-account-*.json
 
 # Editor directories and files
 .vscode/*

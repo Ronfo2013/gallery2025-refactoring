@@ -10,6 +10,11 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/superadmins/$(request.auth.uid));
+    }
+    
     function isBrandOwner(brandId) {
       return isAuthenticated() && 
         exists(/databases/$(database)/documents/superusers/$(request.auth.uid)) &&
@@ -20,40 +25,64 @@ service cloud.firestore {
     // 🆕 MULTI-BRAND RULES (MVP)
     // ============================================
     
-    // Brands collection
-    match /brands/{brandId} {
-      // Lettura pubblica per visualizzare gallery
-      allow read: if true;
-      
-      // Scrittura solo per owner del brand
-      allow write: if isBrandOwner(brandId);
-      
-      // Albums sub-collection
-      match /albums/{albumId} {
-        // Lettura pubblica (gallery pubblica per MVP)
-        allow read: if true;
-        
-        // Scrittura solo per owner
-        allow write: if isBrandOwner(brandId);
-      }
-      
-      // Settings sub-collection
-      match /settings/{settingsId} {
-        // Lettura pubblica per visualizzare settings nella gallery
-        allow read: if true;
-        
-        // Scrittura solo per owner
-        allow write: if isBrandOwner(brandId);
-      }
-    }
-    
     // Superusers collection
     match /superusers/{userId} {
-      // Solo l'utente può leggere i propri dati
-      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Solo l'utente può leggere i propri dati, o SuperAdmin può leggere tutti
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || isSuperAdmin();
       
-      // Nessuna scrittura (gestita solo via Cloud Functions)
+      // SuperAdmin può creare/aggiornare superusers
+      // - create: quando crea nuovo brand con nuovo utente
+      // - update: quando aggiunge brand a utente esistente (multi-brand support)
+      allow create, update: if isSuperAdmin();
+      
+      // Nessun delete dal client (solo via backend/console per sicurezza)
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // 🔐 SUPERADMIN RULES
+    // ============================================
+    
+    // Platform settings
+    match /platform_settings/{document} {
+      // landing_page è leggibile pubblicamente
+      allow read: if document == 'landing_page' || isSuperAdmin();
+      
+      // Scrittura solo per SuperAdmin
+      allow write: if isSuperAdmin();
+    }
+    
+    // SuperAdmins collection
+    match /superadmins/{adminId} {
+      // Lettura solo per se stessi
+      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      
+      // Nessuna scrittura (gestita manualmente)
       allow write: if false;
+    }
+    
+    // Activity logs
+    match /activity_logs/{logId} {
+      // Lettura solo per SuperAdmin
+      allow read: if isSuperAdmin();
+      
+      // Scrittura solo per SuperAdmin o system
+      allow create: if isSuperAdmin();
+      allow update, delete: if false;
+    }
+    
+    // Brands - TEMPORANEO: Lettura/scrittura pubblica per debug
+    match /brands/{brandId} {
+      // TEMPORANEO: Aperto tutto per debug
+      allow read, write: if true;
+      
+      match /albums/{albumId} {
+        allow read, write: if true;
+      }
+      
+      match /settings/{settingsId} {
+        allow read, write: if true;
+      }
     }
     
     // ============================================

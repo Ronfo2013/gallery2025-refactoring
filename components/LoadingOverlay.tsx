@@ -8,18 +8,20 @@ interface LoadingOverlayProps {
   overlay?: boolean;
 }
 
-const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ 
-  isLoading, 
-  message = 'Loading...', 
+const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
+  isLoading,
+  message = 'Loading...',
   size = 'medium',
-  overlay = false 
+  overlay = false,
 }) => {
-  if (!isLoading) return null;
+  if (!isLoading) {
+    return null;
+  }
 
   const sizeClasses = {
     small: 'h-4 w-4',
-    medium: 'h-8 w-8', 
-    large: 'h-12 w-12'
+    medium: 'h-8 w-8',
+    large: 'h-12 w-12',
   };
 
   const content = (
@@ -39,13 +41,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     );
   }
 
-  return (
-    <div className="flex items-center justify-center p-4">
-      {content}
-    </div>
-  );
+  return <div className="flex items-center justify-center p-4">{content}</div>;
 };
 
 export default LoadingOverlay;
-
-

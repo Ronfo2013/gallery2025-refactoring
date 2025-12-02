@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { HashRouter, Route, Routes } from 'react-router-dom';
+import CookieConsent from './components/CookieConsent';
+import DynamicHead from './components/DynamicHead';
+import Footer from './components/Footer';
+import GtmScript from './components/GtmScript';
+import Header from './components/Header';
+import MetaInjector from './components/MetaInjector';
+import PreloaderModern from './components/PreloaderModern';
 import { AppProvider, useAppContext } from './context/AppContext';
 import { BrandProvider, useBrand } from './contexts/BrandContext';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import AlbumList from './pages/AlbumList';
-import AlbumView from './pages/AlbumView';
+import { LandingPageProvider } from './contexts/LandingPageContext';
 import AdminPanel from './pages/AdminPanel';
-import BrandDashboard from './pages/brand/BrandDashboard';
-import Preloader from './components/Preloader';
-import GlassmorphismPreloader from './components/GlassmorphismPreloader';
-import MetaInjector from './components/MetaInjector';
-import DynamicHead from './components/DynamicHead';
-import CookieConsent from './components/CookieConsent';
-import GtmScript from './components/GtmScript';
-import LandingPage from './pages/public/LandingPage';
+import AlbumList from './pages/AlbumListNew';
+import AlbumView from './pages/AlbumViewNew';
+import BrandDashboard from './pages/brand/BrandDashboardNew';
+import LandingPageNew from './pages/public/LandingPageNew';
+import SuperAdminPanel from './pages/superadmin/SuperAdminPanel';
 
 /**
  * Main App - Multi-Tenant Router
- * 
+ *
  * Decides which UI to show based on brand detection:
  * - No brand detected → LandingPage (public homepage)
  * - Brand detected → Gallery with branding applied
@@ -26,68 +27,182 @@ import LandingPage from './pages/public/LandingPage';
 const MainApp: React.FC = () => {
   const { brand, loading: brandLoading, error } = useBrand();
 
-  // Show loading while detecting brand
-  if (brandLoading) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error if brand detection failed
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
-          <h1 className="text-2xl font-bold text-white mb-2">Error Loading Gallery</h1>
-          <p className="text-gray-400">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // No brand detected → Show Landing Page
-  if (!brand) {
-    return <LandingPage />;
-  }
-
-  // Brand detected → Show Gallery with branding
+  // Always use HashRouter to preserve the hash during loading
   return (
     <HashRouter>
-      <MetaInjector />
-      <DynamicHead />
-      <div className="min-h-screen bg-gray-900 text-gray-100 font-sans flex flex-col animate-fade-in">
-        <Header />
-        <main className="container mx-auto p-4 md:p-6 flex-grow">
-          <Routes>
-            <Route path="/" element={<AlbumList />} />
-            <Route path="/album/:albumId" element={<AlbumView />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/dashboard" element={<BrandDashboard />} />
-          </Routes>
-        </main>
-        <Footer />
-        <CookieConsent />
-        <GtmScript />
-      </div>
+      {/* Show loading while detecting brand */}
+      {brandLoading && (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center animate-scale-in">
+            <div
+              className="spinner spinner-lg mb-4 mx-auto"
+              style={{ borderTopColor: 'var(--primary-500)' }}
+            ></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Show error if brand detection failed */}
+      {!brandLoading && error && (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center max-w-md mx-auto p-6">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Gallery</h1>
+            <p className="text-gray-600">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Routes - only render when not loading and no error */}
+      {!brandLoading && !error && (
+        <Routes>
+          {/* No brand detected → Special routes + Landing Page */}
+          {!brand && (
+            <>
+              <Route path="/dashboard" element={<BrandDashboard />} />
+              <Route path="/superadmin" element={<SuperAdminPanel />} />
+              <Route path="*" element={<LandingPageNew />} />
+            </>
+          )}
+
+          {/* Brand detected → Gallery with branding */}
+          {brand && (
+            <>
+              {/* Main gallery route - also handles /demo when demo brand is loaded */}
+              <Route
+                path="/"
+                element={
+                  <>
+                    <MetaInjector />
+                    <DynamicHead />
+                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                      <Header />
+                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                        <AlbumList />
+                      </main>
+                      <Footer />
+                      <CookieConsent />
+                      <GtmScript />
+                    </div>
+                  </>
+                }
+              />
+              <Route
+                path="/album/:albumId"
+                element={
+                  <>
+                    <MetaInjector />
+                    <DynamicHead />
+                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                      <Header />
+                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                        <AlbumView />
+                      </main>
+                      <Footer />
+                      <CookieConsent />
+                      <GtmScript />
+                    </div>
+                  </>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <>
+                    <MetaInjector />
+                    <DynamicHead />
+                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                      <Header />
+                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                        <AdminPanel />
+                      </main>
+                      <Footer />
+                      <CookieConsent />
+                      <GtmScript />
+                    </div>
+                  </>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <>
+                    <MetaInjector />
+                    <DynamicHead />
+                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                      <Header />
+                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                        <BrandDashboard />
+                      </main>
+                      <Footer />
+                      <CookieConsent />
+                      <GtmScript />
+                    </div>
+                  </>
+                }
+              />
+              <Route
+                path="/superadmin"
+                element={
+                  <>
+                    <MetaInjector />
+                    <DynamicHead />
+                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                      <Header />
+                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                        <SuperAdminPanel />
+                      </main>
+                      <Footer />
+                      <CookieConsent />
+                      <GtmScript />
+                    </div>
+                  </>
+                }
+              />
+              {/* Catch-all route for /demo and other paths - render AlbumList */}
+              <Route
+                path="*"
+                element={
+                  <>
+                    <MetaInjector />
+                    <DynamicHead />
+                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                      <Header />
+                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                        <AlbumList />
+                      </main>
+                      <Footer />
+                      <CookieConsent />
+                      <GtmScript />
+                    </div>
+                  </>
+                }
+              />
+            </>
+          )}
+        </Routes>
+      )}
     </HashRouter>
   );
 };
 
 const AppWithPreloader: React.FC = () => {
-  const { loading, siteSettings } = useAppContext();
+  const { loading } = useAppContext();
+  const { brand } = useBrand();
   const [showPreloader, setShowPreloader] = useState(true);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    // Don't show preloader if no brand (Landing Page)
+    if (!brand) {
+      setShowPreloader(false);
+      return;
+    }
+
     // Simula progresso di caricamento
     const progressInterval = setInterval(() => {
-      setProgress(prev => {
+      setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
           return 100;
@@ -98,43 +213,27 @@ const AppWithPreloader: React.FC = () => {
 
     const minPreloadTime = 2000;
     const startTime = Date.now();
-    
+
     const checkCanHidePreloader = () => {
       const elapsedTime = Date.now() - startTime;
       const hasMinTimePassed = elapsedTime >= minPreloadTime;
       const isDataLoaded = !loading && progress >= 100;
-      
+
       if (hasMinTimePassed && isDataLoaded) {
         setShowPreloader(false);
       } else {
         setTimeout(checkCanHidePreloader, 100);
       }
     };
-    
+
     checkCanHidePreloader();
 
     return () => clearInterval(progressInterval);
-  }, [loading, progress]);
+  }, [loading, progress, brand]);
 
-  if (showPreloader && siteSettings.preloader?.enabled && siteSettings.preloader) {
-    return (
-      <GlassmorphismPreloader 
-        appName={siteSettings.appName} 
-        logoUrl={siteSettings.logoUrl}
-        progress={progress}
-        settings={siteSettings.preloader}
-      />
-    );
-  }
-
-  // Fallback to simple preloader if disabled
-  if (showPreloader) {
-    return (
-      <Preloader 
-        appName={siteSettings.appName} 
-        logoUrl={siteSettings.logoUrl} 
-      />
-    );
+  // Show modern preloader during loading ONLY for branded galleries
+  if (showPreloader && brand) {
+    return <PreloaderModern variant="linear" progress={progress} />;
   }
 
   return <MainApp />;
@@ -142,16 +241,18 @@ const AppWithPreloader: React.FC = () => {
 
 /**
  * Root App Component
- * 
+ *
  * Wraps everything with BrandProvider for multi-tenant support
  * and AppProvider for gallery state management
  */
 const App: React.FC = () => {
   return (
     <BrandProvider>
-      <AppProvider>
-        <AppWithPreloader />
-      </AppProvider>
+      <LandingPageProvider>
+        <AppProvider>
+          <AppWithPreloader />
+        </AppProvider>
+      </LandingPageProvider>
     </BrandProvider>
   );
 };

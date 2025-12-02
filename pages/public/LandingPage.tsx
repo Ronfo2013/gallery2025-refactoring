@@ -1,6 +1,6 @@
 /**
  * Landing Page - Public Homepage
- * 
+ *
  * Shown when no brand is detected (main domain).
  * Features:
  * - Hero section with CTA
@@ -34,7 +34,7 @@ const LandingPage: React.FC = () => {
 
       // Initiate Stripe checkout
       await initiateCheckout(email, brandName);
-      
+
       // User will be redirected to Stripe, so no need to setLoading(false)
     } catch (err: any) {
       console.error('Error:', err);
@@ -55,9 +55,15 @@ const LandingPage: React.FC = () => {
             <span className="text-2xl font-bold text-gray-900">Gallery Pro</span>
           </div>
           <nav className="hidden md:flex gap-6">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
-            <a href="#pricing" className="text-gray-600 hover:text-gray-900">Pricing</a>
-            <a href="#faq" className="text-gray-600 hover:text-gray-900">FAQ</a>
+            <a href="#features" className="text-gray-600 hover:text-gray-900">
+              Features
+            </a>
+            <a href="#pricing" className="text-gray-600 hover:text-gray-900">
+              Pricing
+            </a>
+            <a href="#faq" className="text-gray-600 hover:text-gray-900">
+              FAQ
+            </a>
           </nav>
         </div>
       </header>
@@ -72,10 +78,10 @@ const LandingPage: React.FC = () => {
               In Minutes
             </span>
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto">
-            Perfect for photographers, events, and brands. 
-            Upload unlimited photos, customize your gallery, and share with your clients.
+            Perfect for photographers, events, and brands. Upload unlimited photos, customize your
+            gallery, and share with your clients.
           </p>
 
           {/* Signup Form Card */}
@@ -95,7 +101,9 @@ const LandingPage: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <p className="text-xs text-gray-500 mt-1 text-left">
-                  This will be your subdomain: {brandName ? brandName.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'your-brand'}.galleryapp.com
+                  This will be your subdomain:{' '}
+                  {brandName ? brandName.toLowerCase().replace(/[^a-z0-9]/g, '-') : 'your-brand'}
+                  .galleryapp.com
                 </p>
               </div>
 
@@ -125,8 +133,20 @@ const LandingPage: React.FC = () => {
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
                     </svg>
                     Processing...
                   </span>
@@ -136,7 +156,8 @@ const LandingPage: React.FC = () => {
               </button>
 
               <p className="text-xs text-gray-500">
-                ✓ Instant setup &nbsp;&nbsp;|&nbsp;&nbsp; ✓ Cancel anytime &nbsp;&nbsp;|&nbsp;&nbsp; ✓ No commitment
+                ✓ Instant setup &nbsp;&nbsp;|&nbsp;&nbsp; ✓ Cancel anytime &nbsp;&nbsp;|&nbsp;&nbsp;
+                ✓ No commitment
               </p>
             </form>
           </div>
@@ -145,19 +166,31 @@ const LandingPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-8 text-gray-600 text-sm">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
               </svg>
               Unlimited Photos
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
               </svg>
               Custom Subdomain
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
               </svg>
               Full Branding
             </div>
@@ -176,41 +209,31 @@ const LandingPage: React.FC = () => {
             <div className="text-center p-6">
               <div className="text-6xl mb-4">🎨</div>
               <h3 className="text-xl font-bold mb-3 text-gray-900">Fully Branded</h3>
-              <p className="text-gray-600">
-                Custom logo, colors, and subdomain. Make it yours.
-              </p>
+              <p className="text-gray-600">Custom logo, colors, and subdomain. Make it yours.</p>
             </div>
 
             <div className="text-center p-6">
               <div className="text-6xl mb-4">⚡</div>
               <h3 className="text-xl font-bold mb-3 text-gray-900">Lightning Fast</h3>
-              <p className="text-gray-600">
-                Optimized images, WebP format, instant loading.
-              </p>
+              <p className="text-gray-600">Optimized images, WebP format, instant loading.</p>
             </div>
 
             <div className="text-center p-6">
               <div className="text-6xl mb-4">📱</div>
               <h3 className="text-xl font-bold mb-3 text-gray-900">Mobile Ready</h3>
-              <p className="text-gray-600">
-                Beautiful on all devices, from phones to desktops.
-              </p>
+              <p className="text-gray-600">Beautiful on all devices, from phones to desktops.</p>
             </div>
 
             <div className="text-center p-6">
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-xl font-bold mb-3 text-gray-900">Secure & Private</h3>
-              <p className="text-gray-600">
-                Your photos are safe with enterprise-grade security.
-              </p>
+              <p className="text-gray-600">Your photos are safe with enterprise-grade security.</p>
             </div>
 
             <div className="text-center p-6">
               <div className="text-6xl mb-4">📊</div>
               <h3 className="text-xl font-bold mb-3 text-gray-900">Analytics Ready</h3>
-              <p className="text-gray-600">
-                Track views and engagement with your own analytics.
-              </p>
+              <p className="text-gray-600">Track views and engagement with your own analytics.</p>
             </div>
 
             <div className="text-center p-6">
@@ -238,44 +261,100 @@ const LandingPage: React.FC = () => {
 
             <ul className="text-left space-y-4 mb-8">
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Unlimited photo uploads</span>
               </li>
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Unlimited albums</span>
               </li>
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Custom subdomain</span>
               </li>
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Full branding customization</span>
               </li>
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Automatic image optimization</span>
               </li>
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Mobile responsive</span>
               </li>
               <li className="flex items-center gap-3">
-                <svg className="w-6 h-6 text-green-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-6 h-6 text-green-500 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span className="text-gray-700">Email support</span>
               </li>
@@ -311,7 +390,9 @@ const LandingPage: React.FC = () => {
             </div>
 
             <div className="border-b border-gray-200 pb-6">
-              <h3 className="text-xl font-bold mb-2 text-gray-900">How many photos can I upload?</h3>
+              <h3 className="text-xl font-bold mb-2 text-gray-900">
+                How many photos can I upload?
+              </h3>
               <p className="text-gray-600">
                 Unlimited! Upload as many photos as you need, with automatic optimization.
               </p>
@@ -320,7 +401,8 @@ const LandingPage: React.FC = () => {
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-xl font-bold mb-2 text-gray-900">Can I use my own domain?</h3>
               <p className="text-gray-600">
-                Not yet in the MVP version, but it's coming soon! For now, you'll get a custom subdomain.
+                Not yet in the MVP version, but it's coming soon! For now, you'll get a custom
+                subdomain.
               </p>
             </div>
 
@@ -349,9 +431,21 @@ const LandingPage: React.FC = () => {
             Professional photo galleries for brands and photographers
           </p>
           <div className="flex justify-center gap-6 text-sm">
-            <a href="#" className="hover:text-white transition">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition">Terms of Service</a>
-            <a href="#" className="hover:text-white transition">Contact</a>
+            <a href="#" className="hover:text-white transition">
+              Privacy Policy
+            </a>
+            <a href="#" className="hover:text-white transition">
+              Terms of Service
+            </a>
+            <a href="#" className="hover:text-white transition">
+              Contact
+            </a>
+            <a
+              href="#/superadmin"
+              className="hover:text-white transition opacity-30 hover:opacity-100"
+            >
+              Admin
+            </a>
           </div>
           <p className="text-gray-500 text-sm mt-8">
             © {new Date().getFullYear()} Gallery Pro. All rights reserved.
@@ -363,4 +457,3 @@ const LandingPage: React.FC = () => {
 };
 
 export default LandingPage;
-

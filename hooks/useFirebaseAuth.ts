@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendPasswordResetEmail,
+  User,
+} from 'firebase/auth';
 import app from '../firebaseConfig';
 
 const auth = getAuth(app);
@@ -30,7 +37,7 @@ export const useFirebaseAuth = () => {
       return true;
     } catch (error: any) {
       console.error('❌ Login failed:', error);
-      
+
       // Handle specific error codes
       if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         throw new Error('Email o password non corretti');
@@ -55,13 +62,33 @@ export const useFirebaseAuth = () => {
     }
   };
 
+  const resetPassword = async (email: string): Promise<void> => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      console.log('✅ Password reset email sent to:', email);
+    } catch (error: any) {
+      console.error('❌ Password reset failed:', error);
+
+      // Handle specific error codes
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('Nessun account trovato con questa email');
+      } else if (error.code === 'auth/invalid-email') {
+        throw new Error('Email non valida');
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Troppi tentativi. Riprova più tardi');
+      } else {
+        throw new Error("Errore durante l'invio dell'email. Riprova");
+      }
+    }
+  };
+
   return {
     isAuthenticated,
     isLoading,
     user,
+    currentUser: user,
     login,
-    logout
+    logout,
+    resetPassword,
   };
 };
-
-

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Album } from '../types';
@@ -23,7 +22,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album }) => {
   const copyToClipboard = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopySuccess(true);
@@ -31,7 +30,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album }) => {
         setCopySuccess(false);
         setShowShareMenu(false);
       }, 2000);
-    } catch (err) {
+    } catch {
       // Fallback per browser più vecchi
       const textArea = document.createElement('textarea');
       textArea.value = shareUrl;
@@ -64,15 +63,26 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album }) => {
           </div>
         </div>
       </Link>
-      
+
       {/* Share Button */}
       <button
         onClick={handleShare}
         className="absolute top-3 right-3 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 opacity-80 hover:opacity-100 transition-all duration-200 hover:scale-110 z-10"
         title="Condividi album"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+          />
         </svg>
       </button>
 
@@ -94,9 +104,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album }) => {
               {copySuccess ? '✓ Copiato' : 'Copia'}
             </button>
           </div>
-          {copySuccess && (
-            <p className="text-teal-400 text-xs mt-1">Link copiato negli appunti!</p>
-          )}
+          {copySuccess && <p className="text-teal-400 text-xs mt-1">Link copiato negli appunti!</p>}
         </div>
       )}
     </div>

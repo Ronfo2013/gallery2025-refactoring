@@ -16,6 +16,11 @@ service firebase.storage {
         firestore.get(/databases/(default)/documents/superusers/$(request.auth.uid)).data.brandId == brandId;
     }
     
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+        firestore.exists(/databases/(default)/documents/superadmins/$(request.auth.uid));
+    }
+    
     // ============================================
     // 🆕 MULTI-BRAND STORAGE RULES (MVP)
     // ============================================
@@ -25,11 +30,11 @@ service firebase.storage {
       // Lettura pubblica (gallery e assets pubblici)
       allow read: if true;
       
-      // Scrittura solo per owner del brand
-      allow write: if isBrandOwner(brandId);
+      // Scrittura per owner del brand o SuperAdmin
+      allow write: if isBrandOwner(brandId) || isSuperAdmin();
       
-      // Delete solo per owner
-      allow delete: if isBrandOwner(brandId);
+      // Delete per owner del brand o SuperAdmin
+      allow delete: if isBrandOwner(brandId) || isSuperAdmin();
     }
     
     // ============================================
@@ -50,6 +55,12 @@ service firebase.storage {
       allow read: if true;
       allow write: if true; // Temporaneo
     }
+
+    // Landing page assets (hero/background, branding uploads)
+    match /platform/landing/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
   }
 }
-

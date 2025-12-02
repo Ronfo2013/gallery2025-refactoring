@@ -1,46 +1,42 @@
 /**
  * Brand Dashboard - MVP Simplified
- * 
+ *
  * Unified dashboard for brand owners to:
  * - Manage albums and photos
  * - Customize branding (colors, logo)
  * - View settings
- * 
+ *
  * Simplified from AdminPanel for multi-brand MVP
  */
 
-import React, { useState, useRef } from 'react';
-import { useFirebaseAuth } from '../../hooks/useFirebaseAuth';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import React, { useRef, useState } from 'react';
+import AlbumPhotoManager from '../../components/AlbumPhotoManager';
 import { useAppContext } from '../../context/AppContext';
 import { useBrand } from '../../contexts/BrandContext';
-import { updateBrandBranding } from '../../services/brand/brandService';
 import { storage } from '../../firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import AlbumPhotoManager from '../../components/AlbumPhotoManager';
+import { useFirebaseAuth } from '../../hooks/useFirebaseAuth';
+import { updateBrandBranding } from '../../services/brand/brandService';
 
 type TabType = 'albums' | 'branding' | 'settings';
 
 const BrandDashboard: React.FC = () => {
   const { isAuthenticated, logout } = useFirebaseAuth();
   const { brand, refreshBrand } = useBrand();
-  const {
-    albums,
-    siteSettings,
-    addAlbum,
-    deleteAlbum,
-    updateSiteSettings,
-  } = useAppContext();
+  const { albums, addAlbum, deleteAlbum, updateSiteSettings } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<TabType>('albums');
   const [newAlbumTitle, setNewAlbumTitle] = useState('');
   const [isCreatingAlbum, setIsCreatingAlbum] = useState(false);
 
   // Branding state
-  const [branding, setBranding] = useState(brand?.branding || {
-    primaryColor: '#3b82f6',
-    secondaryColor: '#8b5cf6',
-    backgroundColor: '#ffffff',
-  });
+  const [branding, setBranding] = useState(
+    brand?.branding || {
+      primaryColor: '#3b82f6',
+      secondaryColor: '#8b5cf6',
+      backgroundColor: '#ffffff',
+    }
+  );
   const [isSavingBranding, setIsSavingBranding] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -76,7 +72,9 @@ const BrandDashboard: React.FC = () => {
 
   const handleCreateAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAlbumTitle.trim()) return;
+    if (!newAlbumTitle.trim()) {
+      return;
+    }
 
     setIsCreatingAlbum(true);
     try {
@@ -91,7 +89,11 @@ const BrandDashboard: React.FC = () => {
   };
 
   const handleDeleteAlbum = async (albumId: string, albumTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${albumTitle}"? This will delete all photos in this album.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${albumTitle}"? This will delete all photos in this album.`
+      )
+    ) {
       return;
     }
 
@@ -104,7 +106,9 @@ const BrandDashboard: React.FC = () => {
   };
 
   const handleSaveBranding = async () => {
-    if (!brand) return;
+    if (!brand) {
+      return;
+    }
 
     setIsSavingBranding(true);
     try {
@@ -147,9 +151,9 @@ const BrandDashboard: React.FC = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {brand.branding.logo && (
+              {brand.branding?.logo && (
                 <img
-                  src={brand.branding.logo}
+                  src={brand.branding?.logo}
                   alt={brand.name}
                   className="h-10 w-10 rounded-lg object-cover"
                 />
@@ -265,13 +269,11 @@ const BrandDashboard: React.FC = () => {
             <div className="bg-gray-800 rounded-lg p-8 border border-gray-700 space-y-6">
               {/* Logo */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Brand Logo
-                </label>
-                {brand.branding.logo && (
+                <label className="block text-sm font-medium text-gray-300 mb-2">Brand Logo</label>
+                {brand.branding?.logo && (
                   <div className="mb-4">
                     <img
-                      src={brand.branding.logo}
+                      src={brand.branding?.logo}
                       alt="Current logo"
                       className="h-20 w-20 rounded-lg object-cover border-2 border-gray-700"
                     />
@@ -283,7 +285,9 @@ const BrandDashboard: React.FC = () => {
                   accept="image/*"
                   className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer"
                 />
-                <p className="text-xs text-gray-500 mt-1">Recommended: Square image, at least 200x200px</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Recommended: Square image, at least 200x200px
+                </p>
               </div>
 
               {/* Primary Color */}
@@ -351,9 +355,7 @@ const BrandDashboard: React.FC = () => {
 
               {/* Preview */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Preview
-                </label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Preview</label>
                 <div
                   className="p-6 rounded-lg border-2"
                   style={{
@@ -362,7 +364,7 @@ const BrandDashboard: React.FC = () => {
                   }}
                 >
                   <div className="flex items-center gap-4 mb-4">
-                    {brand.branding.logo && (
+                    {brand.branding?.logo && (
                       <div
                         className="h-12 w-12 rounded-lg"
                         style={{ backgroundColor: branding.primaryColor }}
@@ -429,7 +431,9 @@ const BrandDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Subscription Status</label>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Subscription Status
+                </label>
                 <span
                   className={`inline-block px-4 py-2 rounded-lg font-medium ${
                     brand.subscription.status === 'active'
@@ -464,4 +468,3 @@ const BrandDashboard: React.FC = () => {
 };
 
 export default BrandDashboard;
-

@@ -23,13 +23,13 @@
   slug: string;                  // "foto-matrimoni-roma" (unique, per subdomain)
   subdomain: string;             // "foto-matrimoni-roma.yourdomain.com"
   status: 'pending' | 'active' | 'suspended';
-  
+
   subscription: {
     stripeCustomerId: string;    // "cus_123abc..."
     status: 'active' | 'canceled';
     currentPeriodEnd: timestamp; // Firestore Timestamp
   };
-  
+
   branding: {
     logo?: string;               // URL logo (Storage)
     logoPath?: string;           // Path Storage per delete
@@ -37,7 +37,7 @@
     secondaryColor: string;      // "#8b5cf6"
     backgroundColor: string;     // "#ffffff"
   };
-  
+
   ownerEmail: string;            // "owner@example.com"
   createdAt: timestamp;
   updatedAt: timestamp;
@@ -187,9 +187,9 @@ Document ID: `site`
 
 ```typescript
 {
-  id: string;                   // = Firebase Auth UID
+  id: string; // = Firebase Auth UID
   email: string;
-  brandId: string;              // Reference al brand
+  brandId: string; // Reference al brand
   createdAt: timestamp;
 }
 ```
@@ -231,7 +231,7 @@ Document ID: `site`
 ```javascript
 const brandsRef = collection(db, 'brands');
 const q = query(
-  brandsRef, 
+  brandsRef,
   where('subdomain', '==', 'foto-matrimoni-roma.mygallery.com'),
   where('status', '==', 'active')
 );
@@ -259,7 +259,7 @@ const snapshot = await getDocs(albumsRef);
 const brandRef = doc(db, 'brands', brandId);
 await updateDoc(brandRef, {
   'branding.primaryColor': '#ff0000',
-  updatedAt: serverTimestamp()
+  updatedAt: serverTimestamp(),
 });
 ```
 
@@ -281,9 +281,7 @@ await updateDoc(brandRef, {
     {
       "collectionGroup": "brands",
       "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "slug", "order": "ASCENDING" }
-      ]
+      "fields": [{ "fieldPath": "slug", "order": "ASCENDING" }]
     }
   ]
 }
@@ -296,12 +294,13 @@ Firestore creerà automaticamente questi indici al primo utilizzo.
 ## Migrazione da Sistema Attuale
 
 Il sistema attuale usa:
+
 - `/gallery/{documentId}` - contiene array di albums
 
 Migrazione:
+
 1. Leggi `/gallery/albums-config`
 2. Per ogni album, crea documento in `/brands/brand-default/albums/{albumId}`
 3. Sposta files Storage da `/uploads/` a `/brands/brand-default/uploads/`
 
 Script migrazione: vedi `scripts/migrate-to-multibrand.ts`
-

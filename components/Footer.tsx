@@ -5,9 +5,10 @@ const Footer: React.FC = () => {
   const { siteSettings } = useAppContext();
 
   return (
-    <footer className="bg-gray-900/80 mt-8 py-4 border-t border-gray-800">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
-        <p>{siteSettings.footerText}</p>
+    <footer className="bg-white mt-12 py-8 border-t border-gray-200">
+      <div className="container-xl mx-auto px-6 text-center">
+        <p className="text-gray-600 text-sm">{siteSettings.footerText}</p>
+        <p className="text-gray-400 text-xs mt-2">Built with ❤️ using modern web technologies</p>
       </div>
     </footer>
   );

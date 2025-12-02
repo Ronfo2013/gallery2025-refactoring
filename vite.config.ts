@@ -3,40 +3,51 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, '.', '');
-    return {
-      server: {
-        port: 5173,  // Porta default Vite (3000 è usata dal server Node.js)
-        host: '0.0.0.0',
+  const env = loadEnv(mode, '.', '');
+  return {
+    server: {
+      port: 5173, // Porta default Vite (3000 è usata dal server Node.js)
+      host: '0.0.0.0',
+      allowedHosts: [
+        'localhost',
+        '127.0.0.1',
+        'test.gallery.local',
+        '.gallery.local', // Allow all subdomains
+      ],
+    },
+    plugins: [react()],
+    define: {
+      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      // Variabili per il dominio personalizzato
+      'import.meta.env.VITE_CUSTOM_DOMAIN': JSON.stringify(env.VITE_CUSTOM_DOMAIN),
+      'import.meta.env.VITE_APP_URL': JSON.stringify(env.VITE_APP_URL),
+      // Firebase Configuration - esplicite per garantire inclusione nel bundle
+      'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
+      'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
+      'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
+      'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(
+        env.VITE_FIREBASE_STORAGE_BUCKET
+      ),
+      'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(
+        env.VITE_FIREBASE_MESSAGING_SENDER_ID
+      ),
+      'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID),
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
       },
-      plugins: [react()],
-      define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        // Variabili per il dominio personalizzato
-        'import.meta.env.VITE_CUSTOM_DOMAIN': JSON.stringify(env.VITE_CUSTOM_DOMAIN),
-        'import.meta.env.VITE_APP_URL': JSON.stringify(env.VITE_APP_URL),
-        // Firebase Configuration - esplicite per garantire inclusione nel bundle
-        'import.meta.env.VITE_FIREBASE_API_KEY': JSON.stringify(env.VITE_FIREBASE_API_KEY),
-        'import.meta.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
-        'import.meta.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
-        'import.meta.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(env.VITE_FIREBASE_STORAGE_BUCKET),
-        'import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-        'import.meta.env.VITE_FIREBASE_APP_ID': JSON.stringify(env.VITE_FIREBASE_APP_ID)
+    },
+    // Copia il service worker nella cartella dist durante il build
+    publicDir: 'public',
+    build: {
+      chunkSizeWarningLimit: 4000,
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+        },
       },
-      resolve: {
-        alias: {
-          '@': path.resolve(__dirname, '.'),
-        }
-      },
-      // Copia il service worker nella cartella dist durante il build
-      publicDir: 'public',
-      build: {
-        rollupOptions: {
-          input: {
-            main: path.resolve(__dirname, 'index.html'),
-          }
-        }
-      }
-    };
+    },
+  };
 });

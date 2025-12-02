@@ -23,8 +23,8 @@
 
 1. Vai su **Developers > API Keys**
 2. Copia:
-   - **Publishable key** (pk_test_...)
-   - **Secret key** (sk_test_...)
+   - **Publishable key** (pk*test*...)
+   - **Secret key** (sk*test*...)
 3. Aggiungi a `.env.local`:
 
 ```bash
@@ -44,7 +44,7 @@ STRIPE_SECRET_KEY=sk_test_YOUR_KEY_HERE
    - ✅ `customer.subscription.updated`
    - ✅ `customer.subscription.deleted`
 5. Click **Add endpoint**
-6. **COPIA IL WEBHOOK SECRET** (whsec_...)
+6. **COPIA IL WEBHOOK SECRET** (whsec\_...)
 7. Aggiungi a Firebase Functions config:
 
 ```bash
@@ -73,7 +73,7 @@ STRIPE_PRICE_ID=price_1234567890abcdef
 
 1. Completa verifica account Stripe
 2. Switch a **Live Mode** nel dashboard
-3. Ottieni nuove API keys (pk_live_, sk_live_)
+3. Ottieni nuove API keys (pk*live*, sk*live*)
 4. Aggiorna .env con live keys
 5. Configura webhook per URL produzione
 
@@ -100,4 +100,3 @@ stripe trigger checkout.session.completed
 - [Stripe Docs - Checkout](https://stripe.com/docs/checkout)
 - [Stripe Docs - Webhooks](https://stripe.com/docs/webhooks)
 - [Stripe Docs - Testing](https://stripe.com/docs/testing)
-

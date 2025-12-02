@@ -1,6 +1,6 @@
 /**
  * Stripe Service - Frontend Integration
- * 
+ *
  * Handles Stripe operations from the frontend:
  * - Create checkout session
  * - Redirect to Stripe checkout
@@ -9,26 +9,6 @@
 
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
-import { loadStripe, Stripe } from '@stripe/stripe-js';
-
-// Stripe publishable key from environment
-const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-
-let stripePromise: Promise<Stripe | null> | null = null;
-
-/**
- * Get Stripe instance (singleton)
- */
-const getStripe = (): Promise<Stripe | null> => {
-  if (!stripePromise) {
-    if (!stripePublishableKey) {
-      console.error('❌ VITE_STRIPE_PUBLISHABLE_KEY not configured');
-      throw new Error('Stripe publishable key not configured');
-    }
-    stripePromise = loadStripe(stripePublishableKey);
-  }
-  return stripePromise;
-};
 
 /**
  * Create checkout session via Cloud Function
@@ -39,21 +19,20 @@ export const createCheckoutSession = async (
 ): Promise<{ sessionId: string; checkoutUrl: string; brandId: string }> => {
   try {
     console.log('🛒 Creating checkout session for:', email, brandName);
-    
+
     const createSession = httpsCallable<
       { email: string; brandName: string },
       { sessionId: string; checkoutUrl: string; brandId: string }
     >(functions, 'createCheckoutSession');
-    
+
     const result = await createSession({ email, brandName });
-    
+
     console.log('✅ Checkout session created:', result.data.sessionId);
-    
+
     return result.data;
-    
   } catch (error: any) {
     console.error('❌ Error creating checkout session:', error);
-    
+
     // Handle Firebase function errors
     if (error.code === 'already-exists') {
       throw new Error('Brand name already taken. Please choose another name.');
@@ -67,24 +46,15 @@ export const createCheckoutSession = async (
 
 /**
  * Redirect to Stripe checkout
+ * Note: stripe.redirectToCheckout() is deprecated, we now use direct URL redirect
  */
-export const redirectToStripeCheckout = async (sessionId: string): Promise<void> => {
+export const redirectToStripeCheckout = async (checkoutUrl: string): Promise<void> => {
   try {
     console.log('🔄 Redirecting to Stripe checkout...');
-    
-    const stripe = await getStripe();
-    
-    if (!stripe) {
-      throw new Error('Stripe not loaded');
-    }
-    
-    const { error } = await stripe.redirectToCheckout({ sessionId });
-    
-    if (error) {
-      console.error('❌ Redirect error:', error);
-      throw error;
-    }
-    
+    console.log('Checkout URL:', checkoutUrl);
+
+    // Direct redirect to Stripe checkout URL
+    window.location.href = checkoutUrl;
   } catch (error) {
     console.error('❌ Error redirecting to checkout:', error);
     throw error;
@@ -94,13 +64,10 @@ export const redirectToStripeCheckout = async (sessionId: string): Promise<void>
 /**
  * Combined function: Create and redirect to checkout
  */
-export const initiateCheckout = async (
-  email: string,
-  brandName: string
-): Promise<void> => {
+export const initiateCheckout = async (email: string, brandName: string): Promise<void> => {
   try {
-    const { sessionId } = await createCheckoutSession(email, brandName);
-    await redirectToStripeCheckout(sessionId);
+    const { checkoutUrl } = await createCheckoutSession(email, brandName);
+    await redirectToStripeCheckout(checkoutUrl);
   } catch (error) {
     console.error('❌ Error initiating checkout:', error);
     throw error;
@@ -114,17 +81,16 @@ export const initiateCheckout = async (
 export const openCustomerPortal = async (stripeCustomerId: string): Promise<void> => {
   try {
     console.log('🔄 Opening customer portal...');
-    
-    const createPortalSession = httpsCallable<
-      { stripeCustomerId: string },
-      { url: string }
-    >(functions, 'createCustomerPortalSession');
-    
+
+    const createPortalSession = httpsCallable<{ stripeCustomerId: string }, { url: string }>(
+      functions,
+      'createCustomerPortalSession'
+    );
+
     const result = await createPortalSession({ stripeCustomerId });
-    
+
     // Redirect to Stripe portal
     window.location.href = result.data.url;
-    
   } catch (error) {
     console.error('❌ Error opening customer portal:', error);
     throw error;
@@ -145,4 +111,3 @@ export const validateCheckoutSession = async (sessionId: string): Promise<boolea
     return false;
   }
 };
-

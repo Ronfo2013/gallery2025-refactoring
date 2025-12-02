@@ -1,17 +1,23 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
-import { connectStorageEmulator, getStorage } from 'firebase/storage';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
+import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
 // Firebase configuration
 // Queste credenziali verranno prese dalle variabili d'ambiente
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID ||
+    process.env.VITE_FIREBASE_PROJECT_ID ||
+    'YOUR_PROJECT_ID',
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'YOUR_PROJECT_ID.firebasestorage.app',
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
+    process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID,
 };
 
@@ -22,12 +28,13 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
-const functions = getFunctions(app);
+// Specify region for Cloud Functions (must match backend region)
+const functions = getFunctions(app, 'europe-west1');
 
 // 🚀 LOGICA DI CONNESSIONE AGLI EMULATORI
 // Questa sezione si attiva solo in ambiente di sviluppo locale (`make dev`)
 if (import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true') {
-  console.log("🔌 Modalità sviluppo: Connessione agli emulatori Firebase...");
+  console.log('🔌 Modalità sviluppo: Connessione agli emulatori Firebase...');
 
   try {
     // Emulatore Firestore
@@ -52,16 +59,13 @@ if (import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true') {
     const [functionsIp, functionsPort] = functionsHost.split(':');
     connectFunctionsEmulator(functions, functionsIp, parseInt(functionsPort, 10));
     console.log(`⚡ Emulatore Functions connesso a: ${functionsHost}`);
-
   } catch (error) {
-    console.error("❌ Errore durante la connessione agli emulatori:", error);
+    console.error('❌ Errore durante la connessione agli emulatori:', error);
   }
-
 } else {
-  console.log("🌍 Modalità produzione: Connessione ai servizi Firebase reali.");
+  console.log('🌍 Modalità produzione: Connessione ai servizi Firebase reali.');
 }
 
 // Esporta i servizi inizializzati
-export { auth, db, storage, functions };
+export { auth, db, functions, storage };
 export default app;
-
