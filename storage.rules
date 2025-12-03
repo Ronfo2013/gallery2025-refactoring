@@ -27,8 +27,10 @@ service firebase.storage {
     
     // Brand-specific files (/brands/{brandId}/)
     match /brands/{brandId}/{allPaths=**} {
-      // Lettura consentita solo a owner del brand o SuperAdmin
-      allow read: if isBrandOwner(brandId) || isSuperAdmin();
+      // Lettura pubblica consentita per gallerie pubbliche
+      // Permette a visitatori non autenticati di vedere le immagini nelle gallerie pubbliche
+      // FIX: Cambiato da isBrandOwner(brandId) || isSuperAdmin() a true per supportare gallerie pubbliche
+      allow read: if true;
       
       // Scrittura per owner del brand o SuperAdmin
       allow write: if isBrandOwner(brandId) || isSuperAdmin();
