@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useAppContext } from '../context/AppContext';
 import { SiteSettings } from '../types';
 import Spinner from '../components/Spinner';
@@ -79,57 +80,88 @@ const AdminPanel: React.FC = () => {
 
   const handleMainSettingsSave = async () => {
     setIsSaving(true);
-    const newLogoFile = logoInputRef.current?.files?.[0];
-    const { appName, footerText, navLinks, logoUrl, logoPath, siteUrl } = localSettings;
+    try {
+      const newLogoFile = logoInputRef.current?.files?.[0];
+      const { appName, footerText, navLinks, logoUrl, logoPath, siteUrl } = localSettings;
 
-    // Create a settings object with only the relevant fields
-    const settingsToUpdate: Partial<SiteSettings> = {
-      appName,
-      footerText,
-      navLinks,
-      logoUrl,
-      logoPath,
-      siteUrl,
-    };
+      // Create a settings object with only the relevant fields
+      const settingsToUpdate: Partial<SiteSettings> = {
+        appName,
+        footerText,
+        navLinks,
+        logoUrl,
+        logoPath,
+        siteUrl,
+      };
 
-    await updateSiteSettings(settingsToUpdate, newLogoFile);
-    if (logoInputRef.current) {
-      logoInputRef.current.value = '';
-    } // Clear file input
-    setIsSaving(false);
+      await updateSiteSettings(settingsToUpdate, newLogoFile);
+      if (logoInputRef.current) {
+        logoInputRef.current.value = '';
+      } // Clear file input
+      toast.success('Settings saved successfully!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePreloaderSettingsSave = async () => {
     setIsSaving(true);
-    const { preloader } = localSettings;
-    await updateSiteSettings({ preloader });
-    setIsSaving(false);
+    try {
+      const { preloader } = localSettings;
+      await updateSiteSettings({ preloader });
+      toast.success('Preloader settings saved!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save preloader settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSeoAndTrackingSave = async () => {
     setIsSaving(true);
-    const { gtmId, seo, aiEnabled, geminiApiKey } = localSettings;
-    await updateSiteSettings({ gtmId, seo, aiEnabled, geminiApiKey });
-    setIsSaving(false);
+    try {
+      const { gtmId, seo, aiEnabled, geminiApiKey } = localSettings;
+      await updateSiteSettings({ gtmId, seo, aiEnabled, geminiApiKey });
+      toast.success('SEO and tracking settings saved!');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save SEO settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleRemoveLogo = async () => {
     if (window.confirm('Are you sure you want to remove the logo?')) {
       setIsSaving(true);
-      await updateSiteSettings({ logoUrl: null });
-      setIsSaving(false);
+      try {
+        await updateSiteSettings({ logoUrl: null });
+        toast.success('Logo removed successfully!');
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to remove logo');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
   const handleCreateAlbum = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAlbumTitle.trim()) {
+      toast.error('Please enter an album title');
       return;
     }
     setIsCreatingAlbum(true);
-    await addAlbum(newAlbumTitle);
-    setNewAlbumTitle('');
-    setIsCreatingAlbum(false);
+    try {
+      await addAlbum(newAlbumTitle);
+      toast.success(`Album "${newAlbumTitle}" created successfully!`);
+      setNewAlbumTitle('');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create album');
+    } finally {
+      setIsCreatingAlbum(false);
+    }
   };
 
   const handleDeleteAlbum = async (albumId: string) => {
@@ -138,7 +170,13 @@ const AdminPanel: React.FC = () => {
         'Are you sure you want to delete this album and all its photos? This action cannot be undone.'
       )
     ) {
-      await deleteAlbum(albumId);
+      try {
+        const album = albums.find((a) => a.id === albumId);
+        await deleteAlbum(albumId);
+        toast.success(`Album "${album?.title || 'Unknown'}" deleted successfully`);
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete album');
+      }
     }
   };
 
@@ -158,10 +196,10 @@ const AdminPanel: React.FC = () => {
     setIsRecovering(true);
     try {
       await recoverFromStorage();
-      alert('✅ Recupero completato! Controlla il nuovo album "Recovered Photos"');
-    } catch (error) {
+      toast.success('Recovery completed! Check the new "Recovered Photos" album');
+    } catch (error: any) {
       console.error('Recovery error:', error);
-      alert('❌ Errore durante il recupero. Controlla la console per i dettagli.');
+      toast.error(error.message || 'Recovery failed. Check console for details.');
     } finally {
       setIsRecovering(false);
     }
@@ -181,10 +219,10 @@ const AdminPanel: React.FC = () => {
       await resetToDefaults();
       // Update local settings to match the reset
       setLocalSettings(siteSettings);
-      alert('✅ Reset completato! Le configurazioni sono state ripristinate ai valori di default.');
-    } catch (error) {
+      toast.success('Settings reset to defaults successfully!');
+    } catch (error: any) {
       console.error('Reset error:', error);
-      alert('❌ Errore durante il reset. Controlla la console per i dettagli.');
+      toast.error(error.message || 'Reset failed. Check console for details.');
     } finally {
       setIsSaving(false);
     }

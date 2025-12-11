@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Album, Photo } from '../types';
 import { useAppContext } from '../context/AppContext';
 import Spinner from './Spinner';
@@ -71,11 +72,13 @@ const AlbumPhotoManager: React.FC<AlbumPhotoManagerProps> = ({ album, brandId })
     );
 
     if (filesToProcess.length === 0) {
+      toast.error('No files to upload');
       return;
     }
 
     setIsUploadingBatch(true);
     console.log(`🚀 Starting parallel upload of ${filesToProcess.length} files...`);
+    toast.loading(`Uploading ${filesToProcess.length} photo(s)...`, { id: 'upload-batch' });
 
     try {
       const uploadedPhotos: any[] = [];
@@ -111,9 +114,16 @@ const AlbumPhotoManager: React.FC<AlbumPhotoManagerProps> = ({ album, brandId })
             updateFileStatus(file.id, 'success', '✅ Uploaded! Server optimizing...');
           }
         });
+        toast.success(`${uploadedPhotos.length} photo(s) uploaded successfully!`, {
+          id: 'upload-batch',
+        });
+      } else {
+        toast.error('All uploads failed', { id: 'upload-batch' });
       }
 
       console.log('🎉 All uploads completed!');
+    } catch (error: any) {
+      toast.error(error.message || 'Upload failed', { id: 'upload-batch' });
     } finally {
       setIsUploadingBatch(false);
     }
@@ -134,6 +144,7 @@ const AlbumPhotoManager: React.FC<AlbumPhotoManagerProps> = ({ album, brandId })
 
   const handleDeleteSelected = async () => {
     if (selectedPhotoIds.size === 0) {
+      toast.error('No photos selected');
       return;
     }
     if (
@@ -142,7 +153,10 @@ const AlbumPhotoManager: React.FC<AlbumPhotoManagerProps> = ({ album, brandId })
       setIsDeleting(true);
       try {
         await deletePhotosFromAlbum(album.id, Array.from(selectedPhotoIds));
+        toast.success(`${selectedPhotoIds.size} photo(s) deleted successfully`);
         setSelectedPhotoIds(new Set());
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete photos');
       } finally {
         setIsDeleting(false);
       }

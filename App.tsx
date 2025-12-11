@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { HashRouter, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import CookieConsent from './components/CookieConsent';
 import DynamicHead from './components/DynamicHead';
 import Footer from './components/Footer';
@@ -46,8 +47,8 @@ const MainApp: React.FC = () => {
       {/* Show error if brand detection failed */}
       {!brandLoading && error && (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center max-w-md mx-auto p-6">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <div className="text-center max-w-md mx-auto p-6 animate-fade-in">
+            <div className="text-red-500 text-6xl mb-4 animate-bounce">⚠️</div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Gallery</h1>
             <p className="text-gray-600">{error}</p>
           </div>
@@ -251,6 +252,32 @@ const App: React.FC = () => {
       <LandingPageProvider>
         <AppProvider>
           <AppWithPreloader />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+                borderRadius: '10px',
+                padding: '16px',
+              },
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+              },
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
         </AppProvider>
       </LandingPageProvider>
     </BrandProvider>

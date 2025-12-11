@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { initiateCheckout } from '../../services/payment/stripeService';
 import { LandingHeroSettings } from '../../types';
 
@@ -32,10 +33,14 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ data, primaryColor = '
         throw new Error('Brand name must be at least 3 characters');
       }
 
+      toast.loading('Creating your checkout session...', { id: 'checkout' });
       await initiateCheckout(email, brandName);
+      toast.success('Redirecting to payment...', { id: 'checkout' });
     } catch (err: any) {
       console.error('Error:', err);
-      setError(err.message || 'Failed to start checkout');
+      const errorMessage = err.message || 'Failed to start checkout';
+      setError(errorMessage);
+      toast.error(errorMessage, { id: 'checkout' });
       setLoading(false);
     }
   };
