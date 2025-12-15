@@ -1,0 +1,134 @@
+/* Custom styles for Intro.js onboarding tour */
+
+/* Tooltip custom styling */
+.onboarding-tour-tooltip.introjs-tooltip {
+  max-width: 400px;
+  min-width: 300px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+/* Header */
+.introjs-tooltip-header {
+  padding: 16px 20px 0;
+}
+
+/* Content */
+.introjs-tooltiptext {
+  padding: 16px 20px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text, #374151);
+}
+
+/* Buttons */
+.introjs-button {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.introjs-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.introjs-nextbutton,
+.introjs-donebutton {
+  background: var(--color-primary, #3b82f6);
+  color: white;
+}
+
+.introjs-nextbutton:hover,
+.introjs-donebutton:hover {
+  background: var(--color-primary-dark, #2563eb);
+}
+
+.introjs-prevbutton {
+  background: transparent;
+  color: var(--color-text, #374151);
+  border: 1px solid var(--color-border, #e5e7eb);
+}
+
+.introjs-skipbutton {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 13px;
+}
+
+/* Progress bar */
+.introjs-progress {
+  background-color: var(--color-border, #e5e7eb);
+  height: 4px;
+  border-radius: 2px;
+}
+
+.introjs-progressbar {
+  background-color: var(--color-primary, #3b82f6);
+  border-radius: 2px;
+}
+
+/* Bullets */
+.introjs-bullets ul li a {
+  width: 8px;
+  height: 8px;
+  background: var(--color-border, #e5e7eb);
+}
+
+.introjs-bullets ul li a.active {
+  background: var(--color-primary, #3b82f6);
+  width: 12px;
+  height: 12px;
+}
+
+/* Arrow */
+.introjs-arrow {
+  border-color: transparent;
+}
+
+.introjs-arrow.top {
+  border-bottom-color: white;
+}
+
+.introjs-arrow.bottom {
+  border-top-color: white;
+}
+
+.introjs-arrow.left {
+  border-right-color: white;
+}
+
+.introjs-arrow.right {
+  border-left-color: white;
+}
+
+/* Overlay */
+.introjs-overlay {
+  opacity: 0.7;
+}
+
+/* Highlight */
+.introjs-helperLayer {
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+}
+
+/* Tooltiptext animation */
+.introjs-tooltip {
+  animation: tooltipFadeIn 0.3s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

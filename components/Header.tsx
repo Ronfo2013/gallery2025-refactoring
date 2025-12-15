@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 import { useBrand } from '../contexts/BrandContext';
 import { NavLink as NavLinkType } from '../types';
 import { DemoBadge } from './demo/DemoBadge';

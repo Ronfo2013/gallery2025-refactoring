@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Album, Photo } from '../types';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 import Spinner from './Spinner';
 import LoadingOverlay from './LoadingOverlay';
 

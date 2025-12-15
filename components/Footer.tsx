@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 
 const Footer: React.FC = () => {
   const { siteSettings } = useAppContext();

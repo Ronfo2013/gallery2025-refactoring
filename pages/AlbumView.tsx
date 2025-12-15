@@ -1,297 +1,316 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+/**
+ * Album View - Professional Photo Gallery with Lightbox
+ *
+ * Features:
+ * - Responsive masonry grid
+ * - Professional lightbox
+ * - Image lazy loading
+ * - Smooth animations
+ * - Download support
+ *
+ * @version 2.0.0
+ */
+
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAppContext } from '../context/AppContext';
-import { Album, Photo } from '../types';
-import PhotoCard from '../components/PhotoCard';
-import Modal from '../components/Modal';
-import PhotoCardSkeleton from '../components/PhotoCardSkeleton';
-import AlbumMetaTags from '../components/AlbumMetaTags';
+import { useAppContext } from '../contexts/AppContext';
+import { Card, CardBody, EmptyState, Spinner, Button } from '../src/components/ui';
+import {
+  ArrowLeftIcon,
+  ImageIcon,
+  DownloadIcon,
+  XIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Masonry from 'react-masonry-css';
 
-const AlbumView: React.FC = () => {
+const AlbumViewNew: React.FC = () => {
   const { albumId } = useParams<{ albumId: string }>();
-  const { getAlbumById, loading, siteSettings } = useAppContext();
-  const [album, setAlbum] = useState<Album | undefined>(undefined);
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
-  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  const { albums, loading } = useAppContext();
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({});
 
-  useEffect(() => {
-    if (!loading && albumId) {
-      const foundAlbum = getAlbumById(albumId);
-      setAlbum(foundAlbum);
-    }
-  }, [albumId, getAlbumById, loading]);
+  const album = albums.find((a) => a.id === albumId);
 
-  const photosToDisplay = album?.photos || [];
-
-  const selectedPhoto = selectedPhotoIndex !== null ? photosToDisplay[selectedPhotoIndex] : null;
-
-  // Preload images function
-  const preloadImage = useCallback((photo: Photo) => {
-    const imageUrl = photo.mediumUrl || photo.url;
-    if (!imageCache.current.has(imageUrl)) {
-      const img = new Image();
-      img.src = imageUrl;
-      imageCache.current.set(imageUrl, img);
-    }
-  }, []);
-
-  // Preload adjacent images when modal opens or index changes
-  useEffect(() => {
-    if (selectedPhotoIndex !== null && photosToDisplay.length > 0) {
-      // Preload current image
-      preloadImage(photosToDisplay[selectedPhotoIndex]);
-
-      // Preload next image
-      if (selectedPhotoIndex < photosToDisplay.length - 1) {
-        preloadImage(photosToDisplay[selectedPhotoIndex + 1]);
-      }
-
-      // Preload previous image
-      if (selectedPhotoIndex > 0) {
-        preloadImage(photosToDisplay[selectedPhotoIndex - 1]);
-      }
-    }
-  }, [selectedPhotoIndex, photosToDisplay, preloadImage]);
-
-  const handlePhotoClick = (index: number) => {
-    setSelectedPhotoIndex(index);
+  const breakpointColumnsObj = {
+    default: 4,
+    1280: 3,
+    1024: 3,
+    768: 2,
+    640: 1,
   };
 
-  const closeModal = () => {
-    setSelectedPhotoIndex(null);
-    setIsTransitioning(false);
-    setSlideDirection(null);
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    document.body.style.overflow = 'hidden';
   };
 
-  // Touch/swipe support
-  const touchStartX = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
+  const closeLightbox = () => {
+    setLightboxIndex(null);
+    document.body.style.overflow = '';
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) {
-      return;
-    }
-
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > 50;
-    const isRightSwipe = distance < -50;
-
-    if (isLeftSwipe) {
-      handleNextPhoto();
-    } else if (isRightSwipe) {
-      handlePrevPhoto();
+  const goToPrevious = () => {
+    if (lightboxIndex !== null && album) {
+      setLightboxIndex((lightboxIndex - 1 + album.photos.length) % album.photos.length);
     }
   };
 
-  const handleNextPhoto = useCallback(() => {
-    if (
-      isTransitioning ||
-      selectedPhotoIndex === null ||
-      selectedPhotoIndex >= photosToDisplay.length - 1
-    ) {
-      return;
+  const goToNext = () => {
+    if (lightboxIndex !== null && album) {
+      setLightboxIndex((lightboxIndex + 1) % album.photos.length);
     }
+  };
 
-    setIsTransitioning(true);
-    setSlideDirection('left');
-
-    setTimeout(() => {
-      setSelectedPhotoIndex((prevIndex) => (prevIndex !== null ? prevIndex + 1 : 0));
-      setSlideDirection(null);
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 150);
-  }, [photosToDisplay.length, selectedPhotoIndex, isTransitioning]);
-
-  const handlePrevPhoto = useCallback(() => {
-    if (isTransitioning || selectedPhotoIndex === null || selectedPhotoIndex <= 0) {
-      return;
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
     }
+  };
 
-    setIsTransitioning(true);
-    setSlideDirection('right');
-
-    setTimeout(() => {
-      setSelectedPhotoIndex((prevIndex) => (prevIndex !== null ? prevIndex - 1 : 0));
-      setSlideDirection(null);
-      setTimeout(() => setIsTransitioning(false), 50);
-    }, 150);
-  }, [selectedPhotoIndex, isTransitioning]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (selectedPhotoIndex === null) {
+  // Handle keyboard navigation
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) {
         return;
       }
+
+      if (e.key === 'Escape') {
+        closeLightbox();
+      }
+      if (e.key === 'ArrowLeft') {
+        goToPrevious();
+      }
       if (e.key === 'ArrowRight') {
-        handleNextPhoto();
-      } else if (e.key === 'ArrowLeft') {
-        handlePrevPhoto();
+        goToNext();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [selectedPhotoIndex, handleNextPhoto, handlePrevPhoto]);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [lightboxIndex]);
 
   if (loading) {
     return (
-      <div>
-        <div className="mb-8">
-          <div className="h-10 bg-gray-700 rounded w-1/2 mx-auto animate-pulse mb-2"></div>
-          <div className="h-5 bg-gray-700 rounded w-1/4 mx-auto animate-pulse"></div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-          {Array.from({ length: 10 }).map((_, index) => (
-            <PhotoCardSkeleton key={index} />
-          ))}
-        </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Spinner size="lg" />
+        <span className="ml-3 text-gray-600">Loading album...</span>
       </div>
     );
   }
 
   if (!album) {
     return (
-      <div className="text-center py-10">
-        <h2 className="text-2xl font-bold mb-4">Album not found</h2>
-        <p className="mb-4 text-gray-400">The album you are looking for does not exist.</p>
-        <Link to="/" className="text-teal-400 hover:text-teal-300">
-          &larr; Back to Gallery
-        </Link>
-      </div>
+      <Card>
+        <CardBody>
+          <EmptyState
+            icon={<ImageIcon className="w-20 h-20" />}
+            title="Album Not Found"
+            description="The album you're looking for doesn't exist or has been removed."
+            action={{
+              label: 'Back to Albums',
+              onClick: () => window.history.back(),
+            }}
+          />
+        </CardBody>
+      </Card>
     );
   }
 
   return (
-    <div className="animate-fade-in">
-      {/* Meta tags per condivisione social */}
-      {album && <AlbumMetaTags album={album} siteSettings={siteSettings} />}
+    <div>
+      {/* Header */}
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <Link to="/">
+          <Button
+            variant="ghost"
+            size="sm"
+            icon={<ArrowLeftIcon className="w-4 h-4" />}
+            className="mb-4"
+          >
+            Back to Albums
+          </Button>
+        </Link>
 
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-teal-300">{album.title}</h1>
-        <p className="text-gray-400 mt-2">{album.photos.length} photos in this album.</p>
-      </div>
-
-      {photosToDisplay.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-          {photosToDisplay.map((photo, index) => (
-            <div
-              key={photo.id}
-              className="animate-slide-in-up"
-              style={{ animationDelay: `${index * 50}ms`, opacity: 0 }}
-            >
-              <PhotoCard photo={photo} onClick={() => handlePhotoClick(index)} />
-            </div>
-          ))}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="heading-lg text-gray-900 mb-2">{album.title}</h1>
+            <p className="text-muted body-sm flex items-center gap-2">
+              <ImageIcon className="w-4 h-4" />
+              {album.photos.length} {album.photos.length === 1 ? 'photo' : 'photos'}
+            </p>
+          </div>
         </div>
+      </motion.div>
+
+      {/* Photos Grid - Masonry Layout */}
+      {album.photos.length === 0 ? (
+        <Card>
+          <CardBody>
+            <EmptyState
+              icon={<ImageIcon className="w-16 h-16" />}
+              title="No Photos Yet"
+              description="This album doesn't have any photos yet."
+            />
+          </CardBody>
+        </Card>
       ) : (
-        <div className="text-center py-10">
-          <p className="text-gray-400">This album is empty.</p>
-          <Link to="/admin" className="mt-4 inline-block text-teal-400 hover:text-teal-300">
-            Upload photos &rarr;
-          </Link>
-        </div>
+        <Masonry
+          breakpointCols={breakpointColumnsObj}
+          className="flex -ml-6 w-auto"
+          columnClassName="pl-6 bg-clip-padding"
+        >
+          {album.photos.map((photo, index) => (
+            <motion.div
+              key={photo.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              className="mb-6 group cursor-pointer"
+              onClick={() => openLightbox(index)}
+            >
+              <Card hover className="overflow-hidden">
+                <div className="relative">
+                  <img
+                    src={photo.thumbnail || photo.url}
+                    alt={photo.title}
+                    className="w-full h-auto transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                    onLoad={() => setImageLoading((prev) => ({ ...prev, [index]: false }))}
+                  />
+                  {imageLoading[index] && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                      <Spinner size="sm" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
+                </div>
+                {photo.title && (
+                  <CardBody className="p-3">
+                    <p className="text-sm text-gray-700 truncate">{photo.title}</p>
+                  </CardBody>
+                )}
+              </Card>
+            </motion.div>
+          ))}
+        </Masonry>
       )}
 
-      {selectedPhoto && (
-        <Modal isOpen={selectedPhotoIndex !== null} onClose={closeModal}>
-          <div className="relative flex items-center justify-center bg-black rounded-lg overflow-hidden">
-            <div
-              className="relative w-full h-full flex items-center justify-center"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxIndex !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-black bg-opacity-95 flex items-center justify-center"
+            onClick={closeLightbox}
+          >
+            {/* Close Button */}
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 p-3 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg transition-all z-10 text-white"
+            >
+              <XIcon className="w-6 h-6" />
+            </button>
+
+            {/* Download Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const photo = album.photos[lightboxIndex];
+                handleDownload(photo.url, `${photo.title || 'photo'}.jpg`);
+              }}
+              className="absolute top-4 right-20 p-3 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg transition-all z-10 text-white"
+            >
+              <DownloadIcon className="w-6 h-6" />
+            </button>
+
+            {/* Previous Button */}
+            {album.photos.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToPrevious();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg transition-all z-10 text-white"
+              >
+                <ChevronLeftIcon className="w-8 h-8" />
+              </button>
+            )}
+
+            {/* Next Button */}
+            {album.photos.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goToNext();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-lg transition-all z-10 text-white"
+              >
+                <ChevronRightIcon className="w-8 h-8" />
+              </button>
+            )}
+
+            {/* Image */}
+            <motion.div
+              key={lightboxIndex}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="max-w-7xl max-h-[90vh] px-4"
+              onClick={(e) => e.stopPropagation()}
             >
               <img
-                key={selectedPhoto.id}
-                src={selectedPhoto.mediumUrl || selectedPhoto.url}
-                alt={selectedPhoto.title}
-                loading="lazy"
-                className={`max-w-full max-h-[85vh] object-contain transition-all duration-300 ease-out ${
-                  isTransitioning
-                    ? slideDirection === 'left'
-                      ? 'transform translate-x-full opacity-0'
-                      : slideDirection === 'right'
-                        ? 'transform -translate-x-full opacity-0'
-                        : 'transform translate-x-0 opacity-100'
-                    : 'transform translate-x-0 opacity-100'
-                }`}
-                style={{
-                  filter: isTransitioning ? 'blur(1px)' : 'blur(0px)',
-                }}
+                src={album.photos[lightboxIndex].url}
+                alt={album.photos[lightboxIndex].title}
+                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
               />
-            </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrevPhoto();
-              }}
-              disabled={selectedPhotoIndex === 0 || isTransitioning}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-2 sm:p-3 hover:bg-black/60 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-20 disabled:cursor-not-allowed hover:scale-110"
-              aria-label="Previous photo"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
+              {/* Image Title */}
+              {album.photos[lightboxIndex].title && (
+                <div className="mt-4 text-center">
+                  <p className="text-white text-lg font-medium">
+                    {album.photos[lightboxIndex].title}
+                  </p>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {lightboxIndex + 1} of {album.photos.length}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleNextPhoto();
-              }}
-              disabled={selectedPhotoIndex === photosToDisplay.length - 1 || isTransitioning}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-2 sm:p-3 hover:bg-black/60 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-20 disabled:cursor-not-allowed hover:scale-110"
-              aria-label="Next photo"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
-
-            {/* Photo counter */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-3 py-1 rounded-full text-sm">
-              {selectedPhotoIndex !== null ? selectedPhotoIndex + 1 : 0} / {photosToDisplay.length}
-            </div>
-          </div>
-        </Modal>
-      )}
+      {/* Custom Masonry CSS */}
+      <style>{`
+        .my-masonry-grid {
+          display: flex;
+          margin-left: -30px;
+          width: auto;
+        }
+        .my-masonry-grid_column {
+          padding-left: 30px;
+          background-clip: padding-box;
+        }
+      `}</style>
     </div>
   );
 };
 
-export default AlbumView;
+export default AlbumViewNew;

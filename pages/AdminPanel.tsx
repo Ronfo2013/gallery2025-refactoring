@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 import { SiteSettings } from '../types';
 import Spinner from '../components/Spinner';
 import AlbumPhotoManager from '../components/AlbumPhotoManager';

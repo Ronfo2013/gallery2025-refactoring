@@ -4,6 +4,160 @@ Tutte le correzioni e miglioramenti significativi vengono tracciati qui con data
 
 ---
 
+## 2025-12-05 – Fix Routing: Path-Based per BrowserRouter _(AI Assistant)_
+
+### 🐛 Bug Critici Risolti
+
+**Bug #1: `/dashboard` mostrava "Brand not found"**
+- **Causa:** BrandContext interpretava "dashboard" come brand slug invece di special route
+- **Sintomo:** Quando l'utente andava su `http://localhost:5173/dashboard`, il sistema cercava un brand chiamato "dashboard"
+- **Soluzione:** Modificato `BrandContext.tsx` per riconoscere special routes dal PATH, non solo dall'hash
+
+**Bug #2: Login redirect a URL errati con hash**
+- **Causa:** BrandDashboard usava `window.location.hash = '#/admin'` dopo click su pulsante login
+- **Sintomo:** URL diventava `http://localhost:5173/dashboard#/admin` invece di mostrare login
+- **Soluzione:** BrandDashboard ora mostra direttamente `AdminLogin` component invece di pulsante redirect
+
+**Bug #3: Hash routes non funzionavano con BrowserRouter**
+- **Causa:** BrowserRouter ignora completamente gli hash come routes (solo HashRouter li gestisce)
+- **Sintomo:** `http://localhost:5173/#/dashboard` mostrava landing page invece di dashboard
+- **Soluzione:** BrandContext ora riconosce special routes sia da PATH che da HASH (backward compatibility)
+
+### ✅ Modifiche Implementate
+
+#### 1. `contexts/BrandContext.tsx` - Path-Based Routing
+
+**Prima:**
+```typescript
+const slugFromPath = pathSegments.length ? pathSegments[0]?.toLowerCase() : null;
+const specialHashes = ['#/dashboard', '#/superadmin', '#/signup'];
+const isSpecialRoute = !slugFromPath && specialHashes.some(...);
+```
+
+**Dopo:**
+```typescript
+const firstPathSegment = pathSegments.length ? pathSegments[0]?.toLowerCase() : null;
+
+// Special routes riconosciute dal PATH
+const specialRoutes = ['dashboard', 'superadmin', 'signup'];
+const isSpecialPathRoute = firstPathSegment && specialRoutes.includes(firstPathSegment);
+
+// Special routes riconosciute dall'HASH (backward compatibility)
+const specialHashes = ['#/dashboard', '#/superadmin', '#/signup'];
+const isSpecialHashRoute = !firstPathSegment && specialHashes.some(...);
+
+const isSpecialRoute = isSpecialPathRoute || isSpecialHashRoute;
+
+// Non trattare special routes come brand slug
+const slugFromPath = isSpecialPathRoute ? null : firstPathSegment;
+```
+
+**Risultato:**
+- ✅ `/dashboard`, `/superadmin`, `/signup` → Riconosciuti come special routes
+- ✅ `/#/dashboard`, `/#/superadmin`, `/#/signup` → Ancora funzionanti (backward compatibility)
+- ✅ `/test-demo/` → Carica brand "test-demo"
+- ✅ `/` → Mostra landing page
+
+#### 2. `pages/brand/BrandDashboard.tsx` - Login Diretto
+
+**Prima:**
+```typescript
+// Mostrava pulsante che cambiava hash
+<Button onClick={() => (window.location.hash = '#/admin')}>
+  Go to Login
+</Button>
+```
+
+**Dopo:**
+```typescript
+// Importato AdminLogin
+import AdminLogin from '../../components/AdminLogin';
+
+// Destructured login e resetPassword da useFirebaseAuth
+const { login, resetPassword, ... } = useFirebaseAuth();
+
+// Mostra form login diretto
+if (!isAuthenticated || !user) {
+  return (
+    <div>
+      <h2>Brand Dashboard</h2>
+      <AdminLogin onLogin={login} onResetPassword={resetPassword} />
+    </div>
+  );
+}
+```
+
+**Risultato:**
+- ✅ `/dashboard` mostra form di login direttamente
+- ✅ Dopo login, URL rimane `/dashboard` (senza hash strani)
+- ✅ Password reset funziona
+
+#### 3. `pages/superadmin/SuperAdminPanel.tsx` - Già Corretto
+
+**Verifica:** SuperAdminPanel già usava AdminLogin correttamente, nessuna modifica necessaria.
+
+### 📚 Documentazione Aggiunta
+
+**Nuovo file:** `docs/ROUTING_GUIDE.md`
+- Guida completa al routing del sistema
+- Esempi di URL che funzionano e perché
+- Esempi di URL che NON funzionano e perché
+- Architettura routing spiegata
+- Testing checklist
+- Troubleshooting guide
+
+### 🧪 Testing URLs
+
+**✅ Funzionano:**
+```
+http://localhost:5173/dashboard         → Dashboard con login form
+http://localhost:5173/superadmin        → SuperAdmin panel con login form
+http://localhost:5173/test-demo/        → Gallery pubblica brand "test-demo"
+http://localhost:5173/                  → Landing page
+http://localhost:5173/#/dashboard       → Dashboard (backward compatibility)
+http://localhost:5173/#/superadmin      → SuperAdmin (backward compatibility)
+```
+
+**❌ NON funzionano (design intenzionale):**
+```
+http://localhost:5173/test-demo/dashboard        → Mostra gallery (nested routes non supportati)
+http://localhost:5173/test-demo/#/dashboard      → Mostra gallery (BrowserRouter ignora hash)
+```
+
+### 🎯 Credenziali Test
+
+**Dashboard Brand:**
+```
+Email: test-demo@example.com
+Password: TestDemo2025!
+```
+
+**SuperAdmin:**
+```
+Opzione 1:
+Email: info@benhanced.it
+Password: SuperAdmin2025!
+
+Opzione 2:
+Email: test@example.com
+Password: &G0HpsNt@p1&9dweA1!
+```
+
+### 🔄 Breaking Changes
+
+**Nessuno** - Tutte le modifiche sono backward compatible:
+- Path-based routes funzionano
+- Hash-based routes continuano a funzionare
+- Nessuna modifica richiesta a link esistenti
+
+### 📝 Note per Sviluppatori
+
+- **BrowserRouter vs HashRouter:** Il sistema usa BrowserRouter per URL puliti e SEO-friendly
+- **Special Routes:** Aggiungi nuove special routes in ENTRAMBI gli array in BrandContext.tsx: `specialRoutes` (path) e `specialHashes` (hash)
+- **Nested Routes:** Il dashboard NON supporta nested routes con brand slug. Usa `/dashboard` senza brand slug nel path
+
+---
+
 ## 2025-11-24 – Fix Brand Parziale + Email Already in Use _(AI Assistant)_
 
 - **Bug Fix 1:** Brand creato parzialmente (solo email, senza altri dati)

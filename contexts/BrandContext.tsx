@@ -49,19 +49,33 @@ export const BrandProvider: React.FC<BrandProviderProps> = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      // Check if we're on a special route that doesn't need brand (only when no slug path)
+      // Check if we're on a special route that doesn't need brand
       const hash = window.location.hash;
       const pathSegments = window.location.pathname.split('/').filter(Boolean);
-      const slugFromPath = pathSegments.length ? pathSegments[0]?.toLowerCase() : null;
+      const firstPathSegment = pathSegments.length ? pathSegments[0]?.toLowerCase() : null;
+
+      // Special routes can be detected from path OR hash (for backward compatibility)
+      const specialRoutes = ['dashboard', 'superadmin', 'signup'];
       const specialHashes = ['#/dashboard', '#/superadmin', '#/signup'];
-      const isSpecialRoute =
-        !slugFromPath &&
+
+      // Check if first path segment is a special route
+      const isSpecialPathRoute = firstPathSegment && specialRoutes.includes(firstPathSegment);
+
+      // Check if hash is a special route (backward compatibility)
+      const isSpecialHashRoute =
+        !firstPathSegment &&
         specialHashes.some((route) => hash === route || hash.startsWith(`${route}/`));
+
+      const isSpecialRoute = isSpecialPathRoute || isSpecialHashRoute;
+
+      // If it's a special route, don't try to load it as a brand slug
+      const slugFromPath = isSpecialPathRoute ? null : firstPathSegment;
+
       const hasDemoSession = sessionStorage.getItem(DEMO_SESSION_KEY) === 'true';
       const isDemoRoute = hash === '#/demo' || hash.startsWith('#/demo/') || hasDemoSession;
 
       if (isSpecialRoute) {
-        console.log('🔓 Special route detected, skipping brand loading:', hash);
+        console.log('🔓 Special route detected, skipping brand loading. Path:', window.location.pathname, 'Hash:', hash);
         setBrand(null);
         setError(null);
         setLoading(false);

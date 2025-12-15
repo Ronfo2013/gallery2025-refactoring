@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 
 // Declare global dataLayer for TypeScript
 declare global {

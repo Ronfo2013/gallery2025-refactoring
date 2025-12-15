@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Card, CardBody, Button, StatsCard } from '../../src/components/ui';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../contexts/AppContext';
 import { Brand } from '../../types';
 import {
   ImageIcon,

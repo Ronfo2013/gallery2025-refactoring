@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SeoSettings } from '../types';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 import Spinner from './Spinner';
 
 interface SeoManagerProps {

@@ -71,17 +71,28 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     
-    // Brands - TEMPORANEO: Lettura/scrittura pubblica per debug
+    // Brands - Multi-tenant access control
     match /brands/{brandId} {
-      // TEMPORANEO: Aperto tutto per debug
-      allow read, write: if true;
-      
+      // Lettura: brand pubblici OR brand owner OR superadmin
+      allow read: if resource.data.isPublic == true || isBrandOwner(brandId) || isSuperAdmin();
+
+      // Scrittura: solo brand owner o superadmin
+      allow write: if isBrandOwner(brandId) || isSuperAdmin();
+
       match /albums/{albumId} {
-        allow read, write: if true;
+        // Lettura: album pubblici OR brand owner OR superadmin
+        allow read: if resource.data.isPublic == true || isBrandOwner(brandId) || isSuperAdmin();
+
+        // Scrittura: solo brand owner o superadmin
+        allow write: if isBrandOwner(brandId) || isSuperAdmin();
       }
-      
+
       match /settings/{settingsId} {
-        allow read, write: if true;
+        // Lettura: brand owner o superadmin
+        allow read: if isBrandOwner(brandId) || isSuperAdmin();
+
+        // Scrittura: solo brand owner o superadmin
+        allow write: if isBrandOwner(brandId) || isSuperAdmin();
       }
     }
     
@@ -89,13 +100,13 @@ service cloud.firestore {
     // 🔙 LEGACY RULES (da migrare)
     // ============================================
     
-    // Regole per la collection 'gallery' (sistema vecchio)
+    // Regole per la collection 'gallery' (sistema vecchio - READ ONLY)
     match /gallery/{document=**} {
-      // Permetti lettura pubblica
+      // Permetti lettura pubblica (legacy support)
       allow read: if true;
-      
-      // Permetti scrittura a tutti (temporaneo - da rimuovere dopo migrazione)
-      allow write: if true;
+
+      // Scrittura solo per SuperAdmin (migrazione completata)
+      allow write: if isSuperAdmin();
     }
   }
 }

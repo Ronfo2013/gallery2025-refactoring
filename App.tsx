@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { HashRouter, Route, Routes } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import CookieConsent from './components/CookieConsent';
 import DynamicHead from './components/DynamicHead';
 import Footer from './components/Footer';
@@ -7,15 +7,30 @@ import GtmScript from './components/GtmScript';
 import Header from './components/Header';
 import MetaInjector from './components/MetaInjector';
 import PreloaderModern from './components/PreloaderModern';
-import { AppProvider, useAppContext } from './context/AppContext';
+import { AppProvider, useAppContext } from './contexts/AppContext';
 import { BrandProvider, useBrand } from './contexts/BrandContext';
 import { LandingPageProvider } from './contexts/LandingPageContext';
-import AdminPanel from './pages/AdminPanel';
-import AlbumList from './pages/AlbumListNew';
-import AlbumView from './pages/AlbumViewNew';
-import BrandDashboard from './pages/brand/BrandDashboardNew';
-import LandingPageNew from './pages/public/LandingPageNew';
-import SuperAdminPanel from './pages/superadmin/SuperAdminPanel';
+
+// Lazy-loaded pages for better performance
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const AlbumList = lazy(() => import('./pages/AlbumList'));
+const AlbumView = lazy(() => import('./pages/AlbumView'));
+const BrandDashboard = lazy(() => import('./pages/brand/BrandDashboard'));
+const LandingPage = lazy(() => import('./pages/public/LandingPage'));
+const SuperAdminPanel = lazy(() => import('./pages/superadmin/SuperAdminPanel'));
+
+// Loading fallback component
+const PageLoader: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center animate-scale-in">
+      <div
+        className="spinner spinner-lg mb-4 mx-auto"
+        style={{ borderTopColor: 'var(--primary-500)' }}
+      ></div>
+      <p className="text-gray-600">Caricamento...</p>
+    </div>
+  </div>
+);
 
 /**
  * Main App - Multi-Tenant Router
@@ -27,9 +42,9 @@ import SuperAdminPanel from './pages/superadmin/SuperAdminPanel';
 const MainApp: React.FC = () => {
   const { brand, loading: brandLoading, error } = useBrand();
 
-  // Always use HashRouter to preserve the hash during loading
+  // Use BrowserRouter for clean, SEO-friendly URLs
   return (
-    <HashRouter>
+    <BrowserRouter>
       {/* Show loading while detecting brand */}
       {brandLoading && (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -56,15 +71,16 @@ const MainApp: React.FC = () => {
 
       {/* Routes - only render when not loading and no error */}
       {!brandLoading && !error && (
-        <Routes>
-          {/* No brand detected → Special routes + Landing Page */}
-          {!brand && (
-            <>
-              <Route path="/dashboard" element={<BrandDashboard />} />
-              <Route path="/superadmin" element={<SuperAdminPanel />} />
-              <Route path="*" element={<LandingPageNew />} />
-            </>
-          )}
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* No brand detected → Special routes + Landing Page */}
+            {!brand && (
+              <>
+                <Route path="/dashboard" element={<BrandDashboard />} />
+                <Route path="/superadmin" element={<SuperAdminPanel />} />
+                <Route path="*" element={<LandingPage />} />
+              </>
+            )}
 
           {/* Brand detected → Gallery with branding */}
           {brand && (
@@ -181,9 +197,10 @@ const MainApp: React.FC = () => {
               />
             </>
           )}
-        </Routes>
+          </Routes>
+        </Suspense>
       )}
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

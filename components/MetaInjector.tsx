@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../contexts/AppContext';
 
 const MetaInjector: React.FC = () => {
   const { siteSettings } = useAppContext();

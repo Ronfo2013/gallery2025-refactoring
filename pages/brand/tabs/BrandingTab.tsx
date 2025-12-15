@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { useAppContext } from '../../../context/AppContext';
+import { useAppContext } from '../../../contexts/AppContext';
 import { updateBrandBranding } from '../../../services/brand/brandService';
 import { storage } from '../../../firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';

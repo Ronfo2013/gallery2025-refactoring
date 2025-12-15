@@ -54,7 +54,7 @@ export default [
       'react/no-unescaped-entities': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
-      'no-console': 'off',
+      'no-console': 'error', // Use logger instead
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
