@@ -13,8 +13,8 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useBrand } from '../../contexts/BrandContext';
-import { logger } from '../../utils/logger';
 import { routeParams, routes } from '../lib/routes';
+import { logger } from '../utils/logger';
 
 interface TenantGuardProps {
   children: React.ReactNode;
@@ -43,7 +43,9 @@ export const TenantGuard: React.FC<TenantGuardProps> = ({
 
   useEffect(() => {
     // Skip validation durante il loading
-    if (loading) {return;}
+    if (loading) {
+      return;
+    }
 
     // Se c'è un errore nel caricamento del brand
     if (error) {
