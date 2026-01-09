@@ -1,8 +1,9 @@
 import { logger } from '@/utils/logger';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { db } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 import { useFirebaseAuth } from '../../hooks/useFirebaseAuth';
 import { isSuperAdmin } from '../../services/platform/platformService';
 
@@ -11,13 +12,16 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const { login, user, isLoading } = useFirebaseAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Get where to redirect after login (from state or default)
-  const from = (location.state as any)?.from?.pathname || null;
+  const _from = (location.state as any)?.from?.pathname || null;
 
   useEffect(() => {
     // If user is already logged in, redirect them based on role
@@ -55,9 +59,12 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoggingIn) {return;}
+    if (isLoggingIn) {
+      return;
+    }
 
     setError(null);
+    setResetSuccess(false);
     setIsLoggingIn(true);
 
     try {
@@ -68,6 +75,35 @@ const LoginPage: React.FC = () => {
     } catch (err: any) {
       setError(err.message || 'Credenziali non valide');
       setIsLoggingIn(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('Inserisci la tua email per recuperare la password');
+      return;
+    }
+
+    setError(null);
+    setResetSuccess(false);
+    setIsResetting(true);
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setResetSuccess(true);
+      setShowResetPassword(false);
+      logger.info('✅ Email di reset password inviata a:', email);
+    } catch (err: any) {
+      logger.error('❌ Errore durante il reset password:', err);
+      if (err.code === 'auth/user-not-found') {
+        setError('Email non trovata nel sistema');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Email non valida');
+      } else {
+        setError("Errore durante l'invio dell'email di reset");
+      }
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -116,16 +152,25 @@ const LoginPage: React.FC = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(!showResetPassword)}
+                  className="text-xs font-medium text-accent-indigo hover:text-accent-violet transition-colors"
+                >
+                  Password dimenticata?
+                </button>
+              </div>
               <div className="mt-1">
                 <input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="current-password"
-                  required
+                  required={!showResetPassword}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 placeholder-slate-500 text-white shadow-sm focus:border-accent-indigo focus:outline-none focus:ring-accent-indigo sm:text-sm transition-all"
@@ -134,6 +179,57 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Reset Password Section */}
+            {showResetPassword && (
+              <div className="rounded-xl bg-accent-indigo/10 border border-accent-indigo/20 p-4">
+                <p className="text-sm text-slate-300 mb-3">
+                  Inserisci la tua email e ti invieremo un link per reimpostare la password.
+                </p>
+                <button
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={isResetting}
+                  className="w-full flex justify-center py-2.5 px-4 border border-accent-indigo/30 rounded-lg text-sm font-semibold text-white bg-accent-indigo/20 hover:bg-accent-indigo/30 focus:outline-none focus:ring-2 focus:ring-accent-indigo transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResetting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="spinner spinner-xs border-white/30 border-t-white"></div>
+                      <span>Invio in corso...</span>
+                    </div>
+                  ) : (
+                    'Invia Email di Reset'
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {resetSuccess && (
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-emerald-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-emerald-500">
+                      Email inviata! Controlla la tua casella di posta.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error Message */}
             {error && (
               <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-4">
                 <div className="flex">
@@ -156,8 +252,8 @@ const LoginPage: React.FC = () => {
             <div>
               <button
                 type="submit"
-                disabled={isLoggingIn}
-                className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-xl text-sm font-bold text-white bg-gradient-to-r from-accent-indigo to-accent-violet hover:from-accent-violet hover:to-accent-purple focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-indigo transition-all duration-300 ${isLoggingIn ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                disabled={isLoggingIn || showResetPassword}
+                className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-xl text-sm font-bold text-white bg-gradient-to-r from-accent-indigo to-accent-violet hover:from-accent-violet hover:to-accent-purple focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-indigo transition-all duration-300 ${isLoggingIn || showResetPassword ? 'opacity-70 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
               >
                 {isLoggingIn ? (
                   <div className="flex items-center gap-2">

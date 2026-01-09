@@ -52,6 +52,13 @@ service firebase.storage {
       allow write: if isAuthenticated();
     }
     
+    // Uploads generici per brands (senza brandId specifico nel path)
+    match /brands/uploads/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+      allow delete: if isAuthenticated();
+    }
+    
     // Config legacy
     match /config/{allPaths=**} {
       allow read: if true;
