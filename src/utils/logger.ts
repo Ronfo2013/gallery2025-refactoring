@@ -13,7 +13,7 @@
  *   logger.error('Failed to fetch', error);
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+/* eslint-disable no-console */
 
 interface LoggerConfig {
   isDevelopment: boolean;

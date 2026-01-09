@@ -3,7 +3,7 @@
  * Gestisce la cache e la pulizia forzata quando l'admin aggiorna i dati
  */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `gallery-cache-${CACHE_VERSION}`;
 
 // File da cachare durante l'installazione
@@ -222,4 +222,3 @@ self.addEventListener('message', (event) => {
 });
 
 console.log('[Service Worker] Loaded');
-

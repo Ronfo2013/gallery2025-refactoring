@@ -8,6 +8,7 @@
 import { deleteObject, getDownloadURL, listAll, ref, uploadBytes } from 'firebase/storage';
 import { storage } from '../firebaseConfig';
 import * as bucketService from './bucketService';
+import { logger } from '@/utils/logger';
 
 // Tipi per il backup
 export interface BackupData {
@@ -34,7 +35,7 @@ export interface BackupInfo {
  */
 export const createCloudBackup = async (): Promise<string> => {
   try {
-    console.log('💾 Creating cloud backup...');
+    logger.info('💾 Creating cloud backup...');
 
     // Usa la funzione esistente per ottenere config (senza modificarla)
     const config = await bucketService.getConfig();
@@ -68,14 +69,14 @@ export const createCloudBackup = async (): Promise<string> => {
     // Ottieni URL
     const backupUrl = await getDownloadURL(backupRef);
 
-    console.log(`✅ Cloud backup created: ${backupFileName}`);
+    logger.info(`✅ Cloud backup created: ${backupFileName}`);
 
     // Pulizia backup vecchi (mantieni ultimi 10)
     await cleanupOldCloudBackups();
 
     return backupUrl;
   } catch (error) {
-    console.error('❌ Cloud backup failed:', error);
+    logger.error('❌ Cloud backup failed:', error);
     throw error;
   }
 };
@@ -111,9 +112,9 @@ export const getCloudBackups = async (): Promise<BackupInfo[]> => {
   } catch (error: any) {
     // Silently handle missing backups folder (expected for new brands)
     if (error?.code === 'storage/unauthorized' || error?.code === 'storage/object-not-found') {
-      console.log('ℹ️ No cloud backups found (folder may not exist yet)');
+      logger.info('ℹ️ No cloud backups found (folder may not exist yet)');
     } else {
-      console.error('Error getting cloud backups:', error);
+      logger.error('Error getting cloud backups:', error);
     }
     return [];
   }
@@ -124,7 +125,7 @@ export const getCloudBackups = async (): Promise<BackupInfo[]> => {
  */
 export const restoreFromCloudBackup = async (backupUrl: string): Promise<void> => {
   try {
-    console.log('🔄 Restoring from cloud backup...');
+    logger.info('🔄 Restoring from cloud backup...');
 
     // Scarica backup
     const response = await fetch(backupUrl);
@@ -138,9 +139,9 @@ export const restoreFromCloudBackup = async (backupUrl: string): Promise<void> =
     // Usa la funzione esistente per salvare (senza modificarla)
     await bucketService.saveConfig(backupData.config);
 
-    console.log('✅ Config restored from cloud backup');
+    logger.info('✅ Config restored from cloud backup');
   } catch (error) {
-    console.error('❌ Cloud restore failed:', error);
+    logger.error('❌ Cloud restore failed:', error);
     throw error;
   }
 };
@@ -162,10 +163,10 @@ const cleanupOldCloudBackups = async (): Promise<void> => {
 
       await Promise.all(toDelete.map((item) => deleteObject(item)));
 
-      console.log(`🧹 Cleaned up ${toDelete.length} old cloud backups`);
+      logger.info(`🧹 Cleaned up ${toDelete.length} old cloud backups`);
     }
   } catch (error) {
-    console.warn('⚠️ Backup cleanup failed (non-critical):', error);
+    logger.warn('⚠️ Backup cleanup failed (non-critical):', error);
   }
 };
 
@@ -202,9 +203,9 @@ export const exportLocalBackup = async (): Promise<void> => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    console.log('✅ Local backup exported successfully');
+    logger.info('✅ Local backup exported successfully');
   } catch (error) {
-    console.error('Export backup failed:', error);
+    logger.error('Export backup failed:', error);
     throw error;
   }
 };
@@ -225,9 +226,9 @@ export const importLocalBackup = async (file: File): Promise<void> => {
     // Usa la funzione esistente per salvare
     await bucketService.saveConfig(backup.config);
 
-    console.log('✅ Config restored from local backup successfully');
+    logger.info('✅ Config restored from local backup successfully');
   } catch (error) {
-    console.error('Import backup failed:', error);
+    logger.error('Import backup failed:', error);
     throw error;
   }
 };

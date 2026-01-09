@@ -12,6 +12,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { Brand, SuperUser } from '../types';
 import { getBrandById } from '../services/brand/brandService';
+import { logger } from '@/utils/logger';
 
 interface MultiBrandContextType {
   superUser: SuperUser | null;
@@ -48,7 +49,7 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
       setLoading(true);
       setError(null);
 
-      console.log('🔍 Loading superuser data for UID:', userId);
+      logger.info('🔍 Loading superuser data for UID:', userId);
 
       // 1. Load superuser document
       const superuserDoc = await getDoc(doc(db, 'superusers', userId));
@@ -63,7 +64,7 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
       } as SuperUser;
 
       setSuperUser(superuserData);
-      console.log('✅ SuperUser loaded:', superuserData);
+      logger.info('✅ SuperUser loaded:', superuserData);
 
       // 2. Get brand IDs (support both old and new format)
       let brandIds: string[] = [];
@@ -78,7 +79,7 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
         throw new Error('No brands associated with this user');
       }
 
-      console.log('📦 Brand IDs:', brandIds);
+      logger.info('📦 Brand IDs:', brandIds);
 
       // 3. Load all brands
       const brandPromises = brandIds.map((brandId) => getBrandById(brandId));
@@ -89,7 +90,7 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
       }
 
       setBrands(brandsData);
-      console.log(
+      logger.info(
         `✅ Loaded ${brandsData.length} brand(s):`,
         brandsData.map((b) => b.name)
       );
@@ -101,20 +102,20 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
       const storedBrandId = localStorage.getItem(ACTIVE_BRAND_STORAGE_KEY);
       if (storedBrandId && brandIds.includes(storedBrandId)) {
         activeBrandId = storedBrandId;
-        console.log('📍 Using stored brand ID from localStorage:', activeBrandId);
+        logger.info('📍 Using stored brand ID from localStorage:', activeBrandId);
       } else {
         // Use first brand as default
         activeBrandId = brandIds[0];
-        console.log('📍 Using first brand as default:', activeBrandId);
+        logger.info('📍 Using first brand as default:', activeBrandId);
       }
 
       const activeBrand = brandsData.find((b) => b.id === activeBrandId);
       if (activeBrand) {
         setCurrentBrand(activeBrand);
-        console.log('✅ Current brand set:', activeBrand.name);
+        logger.info('✅ Current brand set:', activeBrand.name);
       }
     } catch (err: any) {
-      console.error('❌ Error loading user brands:', err);
+      logger.error('❌ Error loading user brands:', err);
       setError(err.message || 'Failed to load brands');
     } finally {
       setLoading(false);
@@ -123,7 +124,7 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
 
   const switchBrand = async (brandId: string) => {
     try {
-      console.log('🔄 Switching to brand:', brandId);
+      logger.info('🔄 Switching to brand:', brandId);
 
       const brand = brands.find((b) => b.id === brandId);
       if (!brand) {
@@ -133,9 +134,9 @@ export const MultiBrandProvider: React.FC<MultiBrandProviderProps> = ({ userId, 
       setCurrentBrand(brand);
       localStorage.setItem(ACTIVE_BRAND_STORAGE_KEY, brandId);
 
-      console.log('✅ Switched to brand:', brand.name);
+      logger.info('✅ Switched to brand:', brand.name);
     } catch (err: any) {
-      console.error('❌ Error switching brand:', err);
+      logger.error('❌ Error switching brand:', err);
       throw err;
     }
   };
@@ -171,3 +172,5 @@ export const useMultiBrand = (): MultiBrandContextType => {
   }
   return context;
 };
+
+

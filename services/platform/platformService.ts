@@ -8,6 +8,8 @@
  * - SuperAdmin permissions
  */
 
+import { logger } from '@/utils/logger';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import {
   collection,
   doc,
@@ -20,7 +22,6 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../firebaseConfig';
 import { ActivityLog, PlatformSettings, SuperAdmin, SystemHealth } from '../../types';
 
@@ -35,82 +36,80 @@ const activityLogsCollection = collection(db, 'activity_logs');
 const generateInitialPlatformSettings = (): PlatformSettings => {
   const now = new Date();
   return {
-    systemName: 'Gallery2025 SaaS',
-    systemVersion: '1.0.0-mvp',
+    systemName: 'ClubGallery SaaS',
+    systemVersion: '1.0.0',
     systemStatus: 'operational',
 
     seo: {
-      metaTitle: 'Gallery2025 - Piattaforma SaaS per Gallerie Fotografiche',
+      metaTitle: 'ClubGallery - Gestione Gallerie Fotografiche Professionali',
       metaDescription:
-        'Crea la tua galleria fotografica personalizzata in pochi minuti. Brand identity unico, sottodominio dedicato, gestione foto avanzata.',
-      metaKeywords: 'galleria fotografica, saas, fotografia, portfolio, brand identity',
+        'La piattaforma SaaS leader per la gestione di gallerie fotografiche per club, locali ed eventi. Branding personalizzato e prestazioni ultra-rapide.',
+      metaKeywords: 'galleria fotografica, discoteca, locali, eventi, saas, fotografia',
       ogImage: undefined,
       structuredData: JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'SoftwareApplication',
-        name: 'Gallery2025',
-        applicationCategory: 'WebApplication',
+        name: 'ClubGallery',
+        applicationCategory: 'MultimediaApplication',
         offers: {
           '@type': 'Offer',
-          price: '29',
+          price: '49',
           priceCurrency: 'EUR',
         },
       }),
       aiSearchOptimization: {
         enabled: true,
         summaryText:
-          'Gallery2025 è una piattaforma SaaS che permette a fotografi e brand di creare gallerie fotografiche personalizzate con brand identity unico, sottodominio dedicato e gestione avanzata delle foto.',
+          'ClubGallery è una piattaforma SaaS specializzata nella gestione di gallerie fotografiche per il mondo della notte e degli eventi. Offre branding personalizzato, ottimizzazione automatica WebP e una dashboard intuitiva.',
         keyFeatures: [
-          'Gallerie fotografiche illimitate',
-          'Branding personalizzato (logo, colori)',
-          'Sottodominio dedicato',
-          'Ottimizzazione automatica immagini (WebP)',
-          'Dashboard intuitiva',
-          'Pagamenti sicuri con Stripe',
+          'Gallerie fotografiche per locali e discoteche',
+          'Branding personalizzato (logo, colori del club)',
+          "Sottodominio dedicato all'evento",
+          'Ottimizzazione professionale delle immagini',
+          'Dashboard superadmin per agenzie',
+          'Integrazione Stripe per abbonamenti',
         ],
-        targetAudience:
-          'Fotografi professionisti, agenzie fotografiche, brand che necessitano di portfoli online personalizzati',
+        targetAudience: 'Locali, discoteche, organizzatori di eventi, fotografi di eventi',
       },
     },
 
     company: {
-      name: 'La Tua Società',
+      name: 'ClubGallery S.r.l.',
       vatNumber: '',
       taxCode: '',
       address: '',
-      city: '',
+      city: 'Milano',
       country: 'IT',
-      email: 'info@tuodominio.com',
+      email: 'info@clubgallery.com',
       phone: '',
       pec: '',
     },
 
     stripe: {
-      priceId: 'price_XXXXX', // DA CONFIGURARE
-      productId: 'prod_XXXXX', // DA CONFIGURARE
+      priceId: 'price_XXXXX',
+      productId: 'prod_XXXXX',
       webhookConfigured: false,
       testMode: true,
     },
 
     pricing: {
-      monthlyPrice: 29,
+      monthlyPrice: 49,
       currency: 'EUR',
-      trialDays: 0,
+      trialDays: 14,
       features: [
         'Gallerie Illimitate',
-        'Branding Personalizzato',
+        'Branding del Locale',
         'Sottodominio Dedicato',
-        'Storage Foto Illimitato',
-        'Ottimizzazione Automatica Immagini',
-        'Dashboard Intuitiva',
-        'Supporto Email',
+        'Storage Foto Ottimizzato',
+        'Statistiche di Visualizzazione',
+        'Assistenza Prioritaria 24/7',
       ],
     },
 
     alerts: {
       criticalErrors: 0,
       emailNotifications: true,
-      notificationEmail: 'admin@tuodominio.com',
+      notificationEmail: 'admin@clubgallery.com',
     },
 
     analytics: {
@@ -122,8 +121,8 @@ const generateInitialPlatformSettings = (): PlatformSettings => {
 
     features: {
       allowSignup: true,
-      allowCustomDomains: false,
-      allowGoogleOAuth: false,
+      allowCustomDomains: true,
+      allowGoogleOAuth: true,
       maintenanceMode: false,
     },
 
@@ -159,7 +158,7 @@ export const getPlatformSettings = async (): Promise<PlatformSettings> => {
       return initialSettings;
     }
   } catch (error) {
-    console.error('❌ Error getting platform settings:', error);
+    logger.error('❌ Error getting platform settings:', error);
     // Return defaults on error
     return generateInitialPlatformSettings();
   }
@@ -207,9 +206,9 @@ export const updatePlatformSettings = async (updates: Partial<PlatformSettings>)
       metadata: { updates: Object.keys(updates) },
     });
 
-    console.log('✅ Platform settings updated');
+    logger.info('✅ Platform settings updated');
   } catch (error) {
-    console.error('❌ Error updating platform settings:', error);
+    logger.error('❌ Error updating platform settings:', error);
     throw error;
   }
 };
@@ -222,7 +221,7 @@ export const isSuperAdmin = async (uid: string): Promise<boolean> => {
     const superAdminDoc = await getDoc(doc(superAdminsCollection, uid));
     return superAdminDoc.exists();
   } catch (error) {
-    console.error('❌ Error checking superadmin status:', error);
+    logger.error('❌ Error checking superadmin status:', error);
     return false;
   }
 };
@@ -245,7 +244,7 @@ export const getSuperAdmin = async (uid: string): Promise<SuperAdmin | null> => 
 
     return null;
   } catch (error) {
-    console.error('❌ Error getting superadmin:', error);
+    logger.error('❌ Error getting superadmin:', error);
     return null;
   }
 };
@@ -259,7 +258,7 @@ export const updateSuperAdminLogin = async (uid: string): Promise<void> => {
       lastLogin: new Date(),
     });
   } catch (error) {
-    console.error('❌ Error updating superadmin login:', error);
+    logger.error('❌ Error updating superadmin login:', error);
   }
 };
 
@@ -297,7 +296,7 @@ export const logActivity = async (
       timestamp: new Date(),
     });
   } catch (error) {
-    console.error('❌ Error logging activity:', error);
+    logger.error('❌ Error logging activity:', error);
   }
 };
 
@@ -318,7 +317,7 @@ export const getRecentActivityLogs = async (limitCount = 50): Promise<ActivityLo
       } as ActivityLog;
     });
   } catch (error) {
-    console.error('❌ Error getting activity logs:', error);
+    logger.error('❌ Error getting activity logs:', error);
     return [];
   }
 };
@@ -357,7 +356,7 @@ export const getBrandsStatistics = async (): Promise<{
 
     return { total, active, suspended, pending };
   } catch (error) {
-    console.error('❌ Error getting brands statistics:', error);
+    logger.error('❌ Error getting brands statistics:', error);
     return { total: 0, active: 0, suspended: 0, pending: 0 };
   }
 };
@@ -381,7 +380,7 @@ export const getRevenueStatistics = async (
 
     return { totalRevenue, monthlyRevenue };
   } catch (error) {
-    console.error('❌ Error calculating revenue:', error);
+    logger.error('❌ Error calculating revenue:', error);
     return { totalRevenue: 0, monthlyRevenue: 0 };
   }
 };
@@ -403,7 +402,7 @@ export const updateAnalytics = async (): Promise<void> => {
       updatedAt: new Date(),
     });
   } catch (error) {
-    console.error('❌ Error updating analytics:', error);
+    logger.error('❌ Error updating analytics:', error);
   }
 };
 
@@ -457,7 +456,7 @@ export const createBrandSuperuser = async (
       const userId = existingUserDoc.id;
       const existingData = existingUserDoc.data();
 
-      console.log('ℹ️  User already exists, adding brand to array:', { userId, email, brandId });
+      logger.info('ℹ️  User already exists, adding brand to array:', { userId, email, brandId });
 
       // Get existing brandIds (support both old and new format)
       let brandIds: string[] = [];
@@ -480,9 +479,9 @@ export const createBrandSuperuser = async (
           brandId: brandIds[0],
         });
 
-        console.log('✅ Brand added to existing user:', { userId, brandIds });
+        logger.info('✅ Brand added to existing user:', { userId, brandIds });
       } else {
-        console.log("ℹ️  Brand already in user's brandIds");
+        logger.info("ℹ️  Brand already in user's brandIds");
       }
 
       // No password to return (user already has one)
@@ -510,13 +509,13 @@ export const createBrandSuperuser = async (
         updatedAt: new Date(),
       });
 
-      console.log('✅ Brand superuser created:', { userId, email, brandIds: [brandId] });
+      logger.info('✅ Brand superuser created:', { userId, email, brandIds: [brandId] });
 
       return { userId, password, isNewUser: true };
     } catch (authError: any) {
       // If email already in use, try to find user by email in Firestore again
       if (authError.code === 'auth/email-already-in-use') {
-        console.warn('⚠️  Email already in Firebase Auth, searching for existing user...');
+        logger.warn('⚠️  Email already in Firebase Auth, searching for existing user...');
 
         // Query again (might have been created in parallel)
         const retryQuery = query(superusersRef, where('email', '==', email));
@@ -527,7 +526,7 @@ export const createBrandSuperuser = async (
           const userId = existingUserDoc.id;
           const existingData = existingUserDoc.data();
 
-          console.log('ℹ️  Found existing user on retry:', { userId, email });
+          logger.info('ℹ️  Found existing user on retry:', { userId, email });
 
           // Add brand to brandIds
           const brandIds: string[] =
@@ -555,7 +554,7 @@ export const createBrandSuperuser = async (
       throw authError;
     }
   } catch (error: any) {
-    console.error('❌ Error creating brand superuser:', error);
+    logger.error('❌ Error creating brand superuser:', error);
     throw new Error(`Impossibile creare superuser: ${error.message}`);
   }
 };

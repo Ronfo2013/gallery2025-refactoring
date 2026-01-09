@@ -17,8 +17,14 @@ service cloud.firestore {
     
     function isBrandOwner(brandId) {
       return isAuthenticated() && 
-        exists(/databases/$(database)/documents/superusers/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/superusers/$(request.auth.uid)).data.brandId == brandId;
+             exists(/databases/$(database)/documents/superusers/$(request.auth.uid)) &&
+             (
+               get(/databases/$(database)/documents/superusers/$(request.auth.uid)).data.brandId == brandId ||
+               (
+                 "brandIds" in get(/databases/$(database)/documents/superusers/$(request.auth.uid)).data &&
+                 brandId in get(/databases/$(database)/documents/superusers/$(request.auth.uid)).data.brandIds
+               )
+             );
     }
     
     // ============================================
@@ -27,16 +33,16 @@ service cloud.firestore {
     
     // Superusers collection
     match /superusers/{userId} {
-      // Solo l'utente può leggere i propri dati, o SuperAdmin può leggere tutti
-      allow read: if (isAuthenticated() && request.auth.uid == userId) || isSuperAdmin();
+      // Un utente può sempre leggere il proprio profilo. SuperAdmin può leggere tutto.
+      allow read: if (isAuthenticated() && request.auth.uid == userId) || 
+                     exists(/databases/$(database)/documents/superadmins/$(request.auth.uid));
       
-      // SuperAdmin può creare/aggiornare superusers
-      // - create: quando crea nuovo brand con nuovo utente
-      // - update: quando aggiunge brand a utente esistente (multi-brand support)
-      allow create, update: if isSuperAdmin();
+      // Permetti creazione se è un SuperAdmin O se l'utente sta creando il proprio profilo
+      allow create: if exists(/databases/$(database)/documents/superadmins/$(request.auth.uid)) ||
+                       (isAuthenticated() && request.auth.uid == userId);
       
-      // Nessun delete dal client (solo via backend/console per sicurezza)
-      allow delete: if false;
+      // Solo SuperAdmin può aggiornare/eliminare
+      allow update, delete: if exists(/databases/$(database)/documents/superadmins/$(request.auth.uid));
     }
     
     // ============================================
@@ -54,34 +60,34 @@ service cloud.firestore {
     
     // SuperAdmins collection
     match /superadmins/{adminId} {
-      // Lettura solo per se stessi
-      allow read: if isAuthenticated() && request.auth.uid == adminId;
+      // IMPORTANTE: Permetti la lettura se è il proprio documento per evitare ricorsione in isSuperAdmin()
+      allow read: if (isAuthenticated() && request.auth.uid == adminId) || isSuperAdmin();
       
-      // Nessuna scrittura (gestita manualmente)
-      allow write: if false;
+      // Solo un SuperAdmin può aggiungere altri admin
+      allow write: if isSuperAdmin();
     }
     
     // Activity logs
     match /activity_logs/{logId} {
-      // Lettura solo per SuperAdmin
-      allow read: if isSuperAdmin();
-      
-      // Scrittura solo per SuperAdmin o system
-      allow create: if isSuperAdmin();
-      allow update, delete: if false;
+      allow read, write: if isSuperAdmin();
     }
     
     // Brands - Multi-tenant access control
     match /brands/{brandId} {
       // Lettura: brand pubblici OR brand owner OR superadmin
-      allow read: if resource.data.isPublic == true || isBrandOwner(brandId) || isSuperAdmin();
+      // Se isPublic non esiste, lo trattiamo come false (privato)
+      allow read: if (resource != null && resource.data.get('isPublic', false) == true) || 
+                     isBrandOwner(brandId) || 
+                     isSuperAdmin();
 
       // Scrittura: solo brand owner o superadmin
       allow write: if isBrandOwner(brandId) || isSuperAdmin();
 
       match /albums/{albumId} {
         // Lettura: album pubblici OR brand owner OR superadmin
-        allow read: if resource.data.isPublic == true || isBrandOwner(brandId) || isSuperAdmin();
+        allow read: if (resource != null && resource.data.get('isPublic', false) == true) || 
+                       isBrandOwner(brandId) || 
+                       isSuperAdmin();
 
         // Scrittura: solo brand owner o superadmin
         allow write: if isBrandOwner(brandId) || isSuperAdmin();
@@ -100,14 +106,18 @@ service cloud.firestore {
     // 🔙 LEGACY RULES (da migrare)
     // ============================================
     
-    // Regole per la collection 'gallery' (sistema vecchio - READ ONLY)
-    match /gallery/{document=**} {
+    // Regole per la collection 'gallery' (sistema vecchio)
+    match /gallery/{document} {
       // Permetti lettura pubblica (legacy support)
       allow read: if true;
 
-      // Scrittura solo per SuperAdmin (migrazione completata)
-      allow write: if isSuperAdmin();
+      // Permetti la creazione del config iniziale se non esiste, 
+      // altrimenti solo SuperAdmin può scrivere.
+      allow create: if isSuperAdmin() || 
+        (document == 'config' && !exists(/databases/$(database)/documents/gallery/config));
+      
+      allow update: if isSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
   }
 }
-

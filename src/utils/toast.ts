@@ -12,7 +12,8 @@
  *   await toastPromise.wrap(uploadPhoto(file), { ... });
  */
 
-import toast, { Toaster, Toast } from 'react-hot-toast';
+import React from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 
 /**
  * Success toast variants
@@ -235,69 +236,59 @@ export function dismissToast(toastId?: string) {
  *   return (
  *     <>
  *       <AppToaster />
- *       {/ * Rest of app * /}
  *     </>
  *   );
  * }
  */
 export function AppToaster() {
-  return (
-    <Toaster
-      position="top-right"
-      reverseOrder={false}
-      gutter={8}
-      containerClassName=""
-      containerStyle={{}}
-      toastOptions={{
-        // Default options
-        className: '',
+  return React.createElement(Toaster, {
+    position: 'top-right',
+    reverseOrder: false,
+    gutter: 8,
+    containerClassName: '',
+    containerStyle: {},
+    toastOptions: {
+      className: '',
+      duration: 4000,
+      style: {
+        background: 'var(--color-surface, #ffffff)',
+        color: 'var(--color-text, #1f2937)',
+        border: '1px solid var(--color-border, #e5e7eb)',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        padding: '12px 16px',
+        fontSize: '14px',
+        fontWeight: '500',
+      },
+      success: {
         duration: 4000,
+        iconTheme: {
+          primary: 'var(--color-success, #10b981)',
+          secondary: '#ffffff',
+        },
         style: {
-          background: 'var(--color-surface, #ffffff)',
-          color: 'var(--color-text, #1f2937)',
-          border: '1px solid var(--color-border, #e5e7eb)',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          padding: '12px 16px',
-          fontSize: '14px',
-          fontWeight: '500',
+          borderLeft: '4px solid var(--color-success, #10b981)',
         },
-
-        // Success
-        success: {
-          duration: 4000,
-          iconTheme: {
-            primary: 'var(--color-success, #10b981)',
-            secondary: '#ffffff',
-          },
-          style: {
-            borderLeft: '4px solid var(--color-success, #10b981)',
-          },
+      },
+      error: {
+        duration: 6000,
+        iconTheme: {
+          primary: 'var(--color-error, #ef4444)',
+          secondary: '#ffffff',
         },
-
-        // Error
-        error: {
-          duration: 6000,
-          iconTheme: {
-            primary: 'var(--color-error, #ef4444)',
-            secondary: '#ffffff',
-          },
-          style: {
-            borderLeft: '4px solid var(--color-error, #ef4444)',
-          },
+        style: {
+          borderLeft: '4px solid var(--color-error, #ef4444)',
         },
-
-        // Loading
-        loading: {
-          duration: Infinity,
-          iconTheme: {
-            primary: 'var(--color-primary, #3b82f6)',
-            secondary: '#ffffff',
-          },
+      },
+      loading: {
+        duration: Infinity,
+        iconTheme: {
+          primary: 'var(--color-primary, #3b82f6)',
+          secondary: '#ffffff',
         },
-      }}
-    />
-  );
+      },
+    },
+  });
 }
 
 export default {

@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile.dev
     container_name: gallery-app
     ports:
-      - "3000:3000"
+      - '3010:3000'
     environment:
       - NODE_ENV=development
       - PORT=3000
@@ -31,7 +31,7 @@ services:
       - gallery-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -40,30 +40,36 @@ services:
   # Firebase Emulator Suite
   # ==========================================
   firebase-emulator:
-    image: node:22-slim
+    image: ubuntu:24.04
     container_name: gallery-firebase
     working_dir: /app
     ports:
-      - "4000:4000"   # Emulator UI
-      - "8080:8080"   # Firestore
-      - "9199:9199"   # Storage
-      - "5001:5001"   # Functions
-      - "9099:9099"   # Auth
+      - '4010:4010' # Emulator UI
+      - '8090:8090' # Firestore
+      - '9209:9209' # Storage
+      - '5011:5011' # Functions
+      - '9109:9109' # Auth
     volumes:
       - .:/app
+      - /app/functions/node_modules
       - firebase-data:/app/.firebase
       - firebase-export:/app/firebase-export
     command: >
       sh -c "
-        apt-get update && apt-get install -y openjdk-17-jre-headless -qq > /dev/null &&
+        apt-get update && apt-get install -y curl openjdk-21-jre-headless &&
+        curl -fsSL https://deb.nodesource.com/setup_22.x | bash - &&
+        apt-get install -y nodejs &&
         npm install -g firebase-tools &&
-        firebase emulators:start --only firestore,storage,functions,auth --project demo-project --import ./firebase-export --export-on-exit
+        if [ ! -d \"functions/node_modules\" ] || [ -z \"$(ls -A functions/node_modules)\" ]; then
+          cd functions && npm install && cd ..
+        fi &&
+        firebase emulators:start --only firestore,storage,functions,auth --project gallery-app-972f9 --import ./firebase-export --export-on-exit
       "
     networks:
       - gallery-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4000/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:4000/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -77,26 +83,26 @@ services:
       dockerfile: Dockerfile.frontend-dev
     container_name: gallery-frontend
     ports:
-      - "5173:5173"
+      - '5183:5173'
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=http://localhost:3010
       - VITE_FIREBASE_USE_EMULATOR=true
-      - VITE_FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
-      - VITE_FIREBASE_FIRESTORE_EMULATOR_HOST=localhost:8080
-      - VITE_FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199
-      - VITE_FIREBASE_FUNCTIONS_EMULATOR_HOST=localhost:5001
+      - VITE_FIREBASE_AUTH_EMULATOR_HOST=localhost:9109
+      - VITE_FIREBASE_FIRESTORE_EMULATOR_HOST=localhost:8090
+      - VITE_FIREBASE_STORAGE_EMULATOR_HOST=localhost:9209
+      - VITE_FIREBASE_FUNCTIONS_EMULATOR_HOST=localhost:5011
     env_file:
       - .env.local
     volumes:
       # Hot reload completo
       - .:/app
       - /app/node_modules
-    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    command: ['npm', 'run', 'dev', '--', '--host', '0.0.0.0']
     networks:
       - gallery-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5173/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:5173/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -108,7 +114,7 @@ services:
     image: nginx:alpine
     container_name: gallery-proxy
     ports:
-      - "80:80"
+      - '80:80'
     volumes:
       - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -118,7 +124,7 @@ services:
       - gallery-network
     restart: unless-stopped
     profiles:
-      - "with-proxy"
+      - 'with-proxy'
 
 # ==========================================
 # Volumi Persistenti
@@ -135,7 +141,3 @@ volumes:
 networks:
   gallery-network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-

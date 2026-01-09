@@ -13,6 +13,7 @@
 
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
+import { logger } from '@/utils/logger';
 
 export interface CreateBrandData {
   name: string;
@@ -49,7 +50,7 @@ export const createBrandViaCloudFunction = async (
     const result = await createBrand(data);
     return result.data;
   } catch (error: any) {
-    console.error('❌ Error calling createBrand Cloud Function:', error);
+    logger.error('❌ Error calling createBrand Cloud Function:', error);
 
     // Extract user-friendly error message
     let message = 'Errore sconosciuto durante la creazione del brand';
@@ -90,3 +91,5 @@ export const validateBrandData = (data: CreateBrandData): string[] => {
 
   return errors;
 };
+
+

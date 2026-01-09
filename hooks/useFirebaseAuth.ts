@@ -8,6 +8,7 @@ import {
   User,
 } from 'firebase/auth';
 import app from '../firebaseConfig';
+import { logger } from '@/utils/logger';
 
 const auth = getAuth(app);
 
@@ -33,10 +34,10 @@ export const useFirebaseAuth = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       setUser(userCredential.user);
       setIsAuthenticated(true);
-      console.log('✅ Admin logged in successfully');
+      logger.info('✅ Admin logged in successfully');
       return true;
     } catch (error: any) {
-      console.error('❌ Login failed:', error);
+      logger.error('❌ Login failed:', error);
 
       // Handle specific error codes
       if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
@@ -56,18 +57,18 @@ export const useFirebaseAuth = () => {
       await signOut(auth);
       setUser(null);
       setIsAuthenticated(false);
-      console.log('✅ Admin logged out successfully');
+      logger.info('✅ Admin logged out successfully');
     } catch (error) {
-      console.error('❌ Logout failed:', error);
+      logger.error('❌ Logout failed:', error);
     }
   };
 
   const resetPassword = async (email: string): Promise<void> => {
     try {
       await sendPasswordResetEmail(auth, email);
-      console.log('✅ Password reset email sent to:', email);
+      logger.info('✅ Password reset email sent to:', email);
     } catch (error: any) {
-      console.error('❌ Password reset failed:', error);
+      logger.error('❌ Password reset failed:', error);
 
       // Handle specific error codes
       if (error.code === 'auth/user-not-found') {

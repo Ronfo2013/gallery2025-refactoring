@@ -190,6 +190,7 @@ export interface SiteSettings {
   navLinks: NavLink[];
   gtmId: string;
   siteUrl?: string; // Custom site URL for sharing links
+  whatsappNumber?: string; // E.g. "393331234567" senza +
   seo: SeoSettings;
   aiEnabled?: boolean; // Enable/disable AI features
   geminiApiKey?: string; // Gemini API key for AI features
@@ -215,6 +216,7 @@ export interface Brand {
   temporaryPassword?: string; // Temporary password (only shown once after creation)
   createdAt: Date;
   updatedAt: Date;
+  isDemo?: boolean;
 }
 
 export interface BrandSubscription {

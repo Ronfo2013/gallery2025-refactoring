@@ -2,19 +2,22 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAppContext } from '../contexts/AppContext';
 import { useBrand } from '../contexts/BrandContext';
+import { useFirebaseAuth } from '../hooks/useFirebaseAuth';
+import { isSuperAdmin as checkIsSuperAdmin } from '../services/platform/platformService';
 import { NavLink as NavLinkType } from '../types';
 import { DemoBadge } from './demo/DemoBadge';
 
 const NavLink: React.FC<{ to: string; children: React.ReactNode }> = ({ to, children }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
-  const activeClass = 'bg-blue-600 text-white shadow-md';
-  const inactiveClass = 'text-gray-700 hover:bg-gray-100 hover:text-gray-900';
+  const activeClass =
+    'bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border-white/20';
+  const inactiveClass = 'text-gray-400 hover:text-white hover:bg-white/5 border-transparent';
 
   return (
     <Link
       to={to}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? activeClass : inactiveClass}`}
+      className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 border ${isActive ? activeClass : inactiveClass}`}
     >
       {children}
     </Link>
@@ -24,57 +27,116 @@ const NavLink: React.FC<{ to: string; children: React.ReactNode }> = ({ to, chil
 const Header: React.FC = () => {
   const { siteSettings } = useAppContext();
   const { brand } = useBrand();
+  const { user, isAuthenticated, logout } = useFirebaseAuth();
+  const [isSA, setIsSA] = React.useState(false);
 
-  // Check if this is demo gallery
-  const isDemo = brand?.isDemo || brand?.subdomain === 'demo';
+  React.useEffect(() => {
+    const detectRole = async () => {
+      if (user) {
+        const saStatus = await checkIsSuperAdmin(user.uid);
+        setIsSA(saStatus);
+      } else {
+        setIsSA(false);
+      }
+    };
+    detectRole();
+  }, [user]);
+
+  const isDemo = brand?.isDemo || brand?.slug === 'demo';
 
   return (
     <>
       {isDemo && <DemoBadge />}
-      <header className="bg-white/95 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-200">
-        <nav className="container-xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link
-                to="/"
-                className="flex-shrink-0 flex items-center gap-3 hover:opacity-80 transition-opacity"
-              >
+      <header className="sticky top-0 z-[100] px-4 py-4 md:py-6">
+        <div className="container-xl mx-auto">
+          <nav className="glass-card !bg-night-900/40 !backdrop-blur-2xl !border-white/10 px-6 py-4 flex items-center justify-between gap-4">
+            {/* Logo Section */}
+            <Link to="/" className="flex items-center gap-4 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-accent-indigo blur-lg opacity-40 group-hover:opacity-70 transition-opacity" />
                 {siteSettings.logoUrl ? (
                   <img
                     src={siteSettings.logoUrl}
-                    alt="Site Logo"
-                    className="h-10 w-auto rounded-lg"
+                    alt="Logo"
+                    className="relative h-10 w-auto rounded-xl border border-white/20 shadow-2xl"
                   />
                 ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-10 w-10 text-blue-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
+                  <div className="relative h-10 w-10 rounded-xl bg-gradient-to-br from-accent-indigo via-accent-violet to-accent-purple flex items-center justify-center text-white font-black text-sm border border-white/20">
+                    CG
+                  </div>
                 )}
-                <span className="text-xl font-bold text-gray-900">{siteSettings.appName}</span>
-              </Link>
-            </div>
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-center gap-2">
-                {siteSettings.navLinks.map((link: NavLinkType) => (
-                  <NavLink key={link.id} to={link.to}>
-                    {link.text}
-                  </NavLink>
-                ))}
               </div>
+              <span className="hidden sm:block font-display font-black text-xl tracking-tight text-white group-hover:text-glow-indigo transition-all">
+                {siteSettings.appName}
+              </span>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-1">
+              {siteSettings.navLinks.map((link: NavLinkType) => (
+                <NavLink key={link.id} to={link.to}>
+                  {link.text}
+                </NavLink>
+              ))}
             </div>
-          </div>
-        </nav>
+
+            {/* CTA Section */}
+            <div className="flex items-center gap-3">
+              {!isDemo ? (
+                <>
+                  <Link
+                    to="/demo"
+                    className="hidden sm:block px-5 py-2.5 rounded-xl text-sm font-bold text-gray-300 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    Demo
+                  </Link>
+                  {!isAuthenticated ? (
+                    <Link to="/login" className="btn-neon-rose !py-2.5 !px-6 !text-sm !rounded-xl">
+                      Area Riservata
+                    </Link>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {/* If superadmin, show link to superadmin panel */}
+                      {isSA && (
+                        <Link
+                          to="/superadmin"
+                          className="hidden lg:block px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all"
+                        >
+                          Admin Panel
+                        </Link>
+                      )}
+                      <button
+                        onClick={logout}
+                        className="px-5 py-2.5 rounded-xl text-sm font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all border border-rose-500/20"
+                      >
+                        Esci
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/"
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold text-gray-300 hover:text-white hover:bg-white/5 transition-all"
+                  >
+                    Home
+                  </Link>
+                  {siteSettings.whatsappNumber && (
+                    <a
+                      href={`https://wa.me/${siteSettings.whatsappNumber}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-neon-indigo !py-2.5 !px-6 !text-sm !rounded-xl !bg-emerald-500 !shadow-emerald-500/30"
+                    >
+                      Contattaci
+                    </a>
+                  )}
+                </>
+              )}
+            </div>
+          </nav>
+        </div>
       </header>
     </>
   );

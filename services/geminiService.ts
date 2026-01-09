@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { SeoSettings } from '../types';
+import { logger } from '@/utils/logger';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -21,7 +22,7 @@ export const generatePhotoDescription = async (
   const effectiveApiKey = apiKey || process.env.API_KEY;
 
   if (!effectiveApiKey) {
-    console.error('API_KEY not provided.');
+    logger.error('API_KEY not provided.');
     return ''; // Return empty string if no API key
   }
 
@@ -52,7 +53,7 @@ export const generatePhotoDescription = async (
       return 'Could not generate a description for this image.';
     }
   } catch (error) {
-    console.error('Error generating description:', error);
+    logger.error('Error generating description:', error);
     return 'An error occurred while generating the description.';
   }
 };
@@ -65,7 +66,7 @@ export const generateSeoSuggestions = async (
   const effectiveApiKey = apiKey || process.env.API_KEY;
 
   if (!effectiveApiKey) {
-    console.error('API_KEY not provided.');
+    logger.error('API_KEY not provided.');
     return {
       metaTitle: 'Error: API key not configured',
       metaDescription: '',
@@ -112,7 +113,7 @@ export const generateSeoSuggestions = async (
         const schema = JSON.parse(suggestions.structuredData);
         suggestions.structuredData = JSON.stringify(schema, null, 2);
       } catch {
-        console.warn('AI generated invalid JSON for structured data.', suggestions.structuredData);
+        logger.warn('AI generated invalid JSON for structured data.', suggestions.structuredData);
         // Fallback to a basic schema
         suggestions.structuredData = JSON.stringify(
           {
@@ -129,7 +130,7 @@ export const generateSeoSuggestions = async (
 
     return suggestions;
   } catch (error) {
-    console.error('Error generating SEO suggestions:', error);
+    logger.error('Error generating SEO suggestions:', error);
     return {
       metaTitle: 'Error generating suggestions',
       metaDescription: '',
@@ -147,7 +148,7 @@ export const searchPhotosInAlbum = async (
   const effectiveApiKey = apiKey || process.env.API_KEY;
 
   if (!effectiveApiKey) {
-    console.error('API_KEY not provided.');
+    logger.error('API_KEY not provided.');
     return [];
   }
   if (photos.length === 0) {
@@ -197,7 +198,7 @@ export const searchPhotosInAlbum = async (
 
     return result.matchingPhotoIds || [];
   } catch (error) {
-    console.error('Error searching photos:', error);
+    logger.error('Error searching photos:', error);
     return [];
   }
 };

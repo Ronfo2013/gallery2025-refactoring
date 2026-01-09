@@ -1,0 +1,183 @@
+/**
+ * SuperAdmin CSS Overrides
+ * Questo file viene caricato DOPO Tailwind per sovrascrivere tutti gli stili
+ */
+
+/* ============================================
+   SUPERADMIN TEXT COLORS - MASSIMA PRIORITÀ
+   ============================================ */
+
+.admin-text,
+.admin-text h1,
+.admin-text h2,
+.admin-text h3,
+h1.admin-text,
+h2.admin-text,
+h3.admin-text,
+p.admin-text {
+  color: #f8fafc !important;
+}
+
+.admin-text-muted,
+p.admin-text-muted,
+span.admin-text-muted,
+div.admin-text-muted {
+  color: #e2e8f0 !important;
+}
+
+/* ============================================
+   BACKGROUNDS
+   ============================================ */
+
+.admin-bg {
+  background-color: #0f172a !important;
+}
+
+.admin-surface {
+  background-color: #1e293b !important;
+}
+
+/* ============================================
+   BORDERS
+   ============================================ */
+
+.admin-border-color {
+  border-color: #475569 !important;
+}
+
+/* ============================================
+   ACCENT COLORS
+   ============================================ */
+
+.admin-accent,
+svg.admin-accent {
+  color: #60a5fa !important;
+}
+
+.admin-accent-bg {
+  background-color: #60a5fa !important;
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+.admin-label,
+label.admin-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #f8fafc !important;
+}
+
+.admin-input,
+input.admin-input,
+.admin-textarea,
+textarea.admin-textarea,
+.admin-select,
+select.admin-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #f8fafc !important;
+  transition: all 0.2s ease;
+}
+
+.admin-textarea,
+textarea.admin-textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.admin-input:focus,
+input.admin-input:focus,
+.admin-textarea:focus,
+textarea.admin-textarea:focus,
+.admin-select:focus,
+select.admin-select:focus {
+  outline: none;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1) !important;
+}
+
+.admin-input:disabled,
+input.admin-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   FIX PER ELEMENTI SPECIFICI
+   ============================================ */
+
+/* Forza il colore su tutti i paragrafi dentro SuperAdmin */
+[class*='SuperAdmin'] p,
+[class*='superadmin'] p {
+  color: inherit;
+}
+
+/* Forza il colore su tutti gli heading dentro SuperAdmin */
+[class*='SuperAdmin'] h1,
+[class*='SuperAdmin'] h2,
+[class*='SuperAdmin'] h3,
+[class*='superadmin'] h1,
+[class*='superadmin'] h2,
+[class*='superadmin'] h3 {
+  color: #f8fafc !important;
+}
+
+/* Override completo per evitare conflitti Tailwind */
+.admin-text * {
+  color: inherit !important;
+}
+
+.admin-text-muted * {
+  color: inherit !important;
+}
+
+/* ============================================
+   CARD OVERRIDES PER SUPERADMIN
+   ============================================ */
+
+/* Tutte le card dentro l'admin hanno sfondo scuro */
+.admin-bg .card {
+  background-color: #1e293b !important;
+  border: 1px solid #475569 !important;
+}
+
+/* CardHeader con bordo scuro */
+.admin-bg .card > div:first-child,
+.admin-bg .card [class*='border-b'] {
+  border-bottom-color: #475569 !important;
+  background-color: transparent !important;
+}
+
+/* CardBody */
+.admin-bg .card > div {
+  background-color: transparent !important;
+}
+
+/* CardFooter */
+.admin-bg .card > div:last-child,
+.admin-bg .card [class*='border-t'] {
+  border-top-color: #475569 !important;
+  background-color: #1e293b !important;
+}
+
+/* Fix per tutti i border-gray dentro admin */
+.admin-bg [class*='border-gray'] {
+  border-color: #475569 !important;
+}
+
+/* Fix per tutti i bg-gray dentro admin */
+.admin-bg [class*='bg-gray'] {
+  background-color: transparent !important;
+}
+
+/* Fix per tutti i text-gray dentro admin (tranne i semantic colors) */
+.admin-bg [class*='text-gray-']:not([class*='text-gray-50']):not([class*='text-gray-100']) {
+  color: #94a3b8 !important;
+}

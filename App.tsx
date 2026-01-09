@@ -5,6 +5,7 @@ import DynamicHead from './components/DynamicHead';
 import Footer from './components/Footer';
 import GtmScript from './components/GtmScript';
 import Header from './components/Header';
+import GlassDemoLayout from './components/layout/GlassDemoLayout';
 import MetaInjector from './components/MetaInjector';
 import PreloaderModern from './components/PreloaderModern';
 import { AppProvider, useAppContext } from './contexts/AppContext';
@@ -19,15 +20,18 @@ const BrandDashboard = lazy(() => import('./pages/brand/BrandDashboard'));
 const LandingPage = lazy(() => import('./pages/public/LandingPage'));
 const SuperAdminPanel = lazy(() => import('./pages/superadmin/SuperAdminPanel'));
 
+const LoginPage = lazy(() => import('./pages/public/LoginPage'));
+const ProtectedRoute = lazy(() => import('./components/auth/ProtectedRoute'));
+
 // Loading fallback component
 const PageLoader: React.FC = () => (
-  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  <div className="min-h-screen bg-slate-950 flex items-center justify-center">
     <div className="text-center animate-scale-in">
       <div
         className="spinner spinner-lg mb-4 mx-auto"
-        style={{ borderTopColor: 'var(--primary-500)' }}
+        style={{ borderTopColor: 'var(--brand-primary, #3b82f6)' }}
       ></div>
-      <p className="text-gray-600">Caricamento...</p>
+      <p className="text-slate-400">Caricamento...</p>
     </div>
   </div>
 );
@@ -47,24 +51,24 @@ const MainApp: React.FC = () => {
     <BrowserRouter>
       {/* Show loading while detecting brand */}
       {brandLoading && (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
           <div className="text-center animate-scale-in">
             <div
               className="spinner spinner-lg mb-4 mx-auto"
-              style={{ borderTopColor: 'var(--primary-500)' }}
+              style={{ borderTopColor: 'var(--brand-primary, #3b82f6)' }}
             ></div>
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-slate-400">Loading...</p>
           </div>
         </div>
       )}
 
       {/* Show error if brand detection failed */}
       {!brandLoading && error && (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
           <div className="text-center max-w-md mx-auto p-6">
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Gallery</h1>
-            <p className="text-gray-600">{error}</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Error Loading Gallery</h1>
+            <p className="text-slate-400">{error}</p>
           </div>
         </div>
       )}
@@ -73,130 +77,121 @@ const MainApp: React.FC = () => {
       {!brandLoading && !error && (
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* No brand detected → Special routes + Landing Page */}
+            {/* No brand detected → Special routes + Landing/Demo */}
             {!brand && (
               <>
-                <Route path="/dashboard" element={<BrandDashboard />} />
-                <Route path="/superadmin" element={<SuperAdminPanel />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute requiredRole="cliente">
+                      <BrandDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/superadmin"
+                  element={
+                    <ProtectedRoute requiredRole="superadmin">
+                      <SuperAdminPanel />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Unbranded demo gallery: uses global albums, no brand needed */}
+                <Route
+                  path="/demo"
+                  element={
+                    <>
+                      <MetaInjector />
+                      <DynamicHead />
+                      <GlassDemoLayout>
+                        <AlbumList />
+                      </GlassDemoLayout>
+                    </>
+                  }
+                />
+                {/* Unbranded album view for demo */}
+                <Route
+                  path="/album/:albumId"
+                  element={
+                    <>
+                      <MetaInjector />
+                      <DynamicHead />
+                      <GlassDemoLayout>
+                        <AlbumView />
+                      </GlassDemoLayout>
+                    </>
+                  }
+                />
                 <Route path="*" element={<LandingPage />} />
               </>
             )}
 
-          {/* Brand detected → Gallery with branding */}
-          {brand && (
-            <>
-              {/* Main gallery route - also handles /demo when demo brand is loaded */}
-              <Route
-                path="/"
-                element={
-                  <>
-                    <MetaInjector />
-                    <DynamicHead />
-                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
-                      <Header />
-                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
-                        <AlbumList />
-                      </main>
-                      <Footer />
-                      <CookieConsent />
-                      <GtmScript />
-                    </div>
-                  </>
-                }
-              />
-              <Route
-                path="/album/:albumId"
-                element={
-                  <>
-                    <MetaInjector />
-                    <DynamicHead />
-                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
-                      <Header />
-                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
-                        <AlbumView />
-                      </main>
-                      <Footer />
-                      <CookieConsent />
-                      <GtmScript />
-                    </div>
-                  </>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <>
-                    <MetaInjector />
-                    <DynamicHead />
-                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
-                      <Header />
-                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
-                        <AdminPanel />
-                      </main>
-                      <Footer />
-                      <CookieConsent />
-                      <GtmScript />
-                    </div>
-                  </>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <>
-                    <MetaInjector />
-                    <DynamicHead />
-                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
-                      <Header />
-                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
-                        <BrandDashboard />
-                      </main>
-                      <Footer />
-                      <CookieConsent />
-                      <GtmScript />
-                    </div>
-                  </>
-                }
-              />
-              <Route
-                path="/superadmin"
-                element={
-                  <>
-                    <MetaInjector />
-                    <DynamicHead />
-                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
-                      <Header />
-                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
-                        <SuperAdminPanel />
-                      </main>
-                      <Footer />
-                      <CookieConsent />
-                      <GtmScript />
-                    </div>
-                  </>
-                }
-              />
-              {/* Catch-all route for /demo and other paths - render AlbumList */}
-              <Route
-                path="*"
-                element={
-                  <>
-                    <MetaInjector />
-                    <DynamicHead />
-                    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
-                      <Header />
-                      <main className="container-xl mx-auto px-6 py-8 flex-grow">
-                        <AlbumList />
-                      </main>
-                      <Footer />
-                      <CookieConsent />
-                      <GtmScript />
-                    </div>
-                  </>
-                }
-              />
-            </>
-          )}
+            {/* Brand detected → Gallery with branding */}
+            {brand && (
+              <>
+                {/* Brand gallery list: /{brandSlug} */}
+                <Route
+                  path="/*"
+                  element={
+                    <>
+                      <MetaInjector />
+                      <DynamicHead />
+                      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-200 text-slate-900 font-sans flex flex-col animate-fade-in">
+                        <Header />
+                        <main className="container-xl mx-auto px-4 md:px-6 py-10 flex-grow">
+                          <div className="rounded-3xl bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl shadow-slate-900/10 p-4 md:p-8">
+                            <AlbumList />
+                          </div>
+                        </main>
+                        <Footer />
+                        <CookieConsent />
+                        <GtmScript />
+                      </div>
+                    </>
+                  }
+                />
+                {/* Album detail: /{brandSlug}/{albumId} */}
+                <Route
+                  path="/:brandSlug/:albumId"
+                  element={
+                    <>
+                      <MetaInjector />
+                      <DynamicHead />
+                      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-200 text-slate-900 font-sans flex flex-col animate-fade-in">
+                        <Header />
+                        <main className="container-xl mx-auto px-4 md:px-6 py-10 flex-grow">
+                          <div className="rounded-3xl bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl shadow-slate-900/10 p-4 md:p-8">
+                            <AlbumView />
+                          </div>
+                        </main>
+                        <Footer />
+                        <CookieConsent />
+                        <GtmScript />
+                      </div>
+                    </>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <>
+                      <MetaInjector />
+                      <DynamicHead />
+                      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans flex flex-col animate-fade-in">
+                        <Header />
+                        <main className="container-xl mx-auto px-6 py-8 flex-grow">
+                          <AdminPanel />
+                        </main>
+                        <Footer />
+                        <CookieConsent />
+                        <GtmScript />
+                      </div>
+                    </>
+                  }
+                />
+              </>
+            )}
           </Routes>
         </Suspense>
       )}

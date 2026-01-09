@@ -1,18 +1,24 @@
+import { initSentry } from '@/lib/sentry';
+import { logger } from '@/utils/logger';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './src/styles/design-system.css';
 
-// UNREGISTER Service Worker (from old project)
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (const registration of registrations) {
-      registration.unregister().then((success) => {
-        if (success) {
-          console.log('✅ Service Worker unregistered successfully');
-        }
+// 🛡️ Initialize Sentry error tracking (production only)
+initSentry();
+
+// Register PWA service worker in production
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .then((registration) => {
+        logger.info('✅ Service Worker registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        logger.error('❌ Service Worker registration failed:', error);
       });
-    }
   });
 }
 

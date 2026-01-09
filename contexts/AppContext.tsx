@@ -1,15 +1,16 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { Album, Photo, SiteSettings, SeoSettings } from '../types';
+import { logger } from '@/utils/logger';
+import { getDownloadURL, listAll, ref } from 'firebase/storage';
+import React, { ReactNode, createContext, useContext, useEffect, useState } from 'react';
+import { useBrand } from '../contexts/BrandContext';
+import { storage } from '../firebaseConfig';
 import * as bucketService from '../services/bucketService';
 import {
   generatePhotoDescription,
   generateSeoSuggestions,
   searchPhotosInAlbum,
 } from '../services/geminiService';
-import { storage } from '../firebaseConfig';
-import { ref, listAll, getDownloadURL } from 'firebase/storage';
-import { useBrand } from '../contexts/BrandContext';
-import { generatePhotoId, generateAlbumId } from '../src/utils/uniqueId';
+import { generateAlbumId, generatePhotoId } from '../src/utils/uniqueId';
+import { Album, Photo, SeoSettings, SiteSettings } from '../types';
 
 interface AppContextType {
   albums: Album[];
@@ -49,9 +50,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { brand } = useBrand();
+  const isDemoRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/demo');
   const [albums, setAlbums] = useState<Album[]>([]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
-    appName: 'AI Gallery',
+    appName: 'ClubGallery',
     logoUrl: null,
     footerText: '',
     navLinks: [],
@@ -104,42 +106,61 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           (link) => link.to === '/admin' || link.text.toLowerCase().includes('admin')
         );
 
-        if (hasAdminInNav) {
-          console.log('🔧 Auto-fixing: Removing Admin Panel from navbar');
-          const cleanedNavLinks = config.siteSettings.navLinks.filter(
-            (link) => link.to !== '/admin' && !link.text.toLowerCase().includes('admin')
-          );
+        const cleanedNavLinks = hasAdminInNav
+          ? config.siteSettings.navLinks.filter(
+              (link) => link.to !== '/admin' && !link.text.toLowerCase().includes('admin')
+            )
+          : config.siteSettings.navLinks;
 
-          const updatedSettings = {
-            ...config.siteSettings,
-            navLinks: cleanedNavLinks,
-          };
+        const updatedSettings: SiteSettings = {
+          ...config.siteSettings,
+          navLinks: cleanedNavLinks,
+        };
 
-          // Save the cleaned configuration
-          await bucketService.saveConfig({
-            albums: config.albums,
-            siteSettings: updatedSettings,
-          });
+        // Se non è demo, app normale con dati da Firestore (più auto-fix nav)
+        if (!isDemoRoute) {
+          if (hasAdminInNav) {
+            logger.info('🔧 Auto-fixing: Removing Admin Panel from navbar');
+            try {
+              await bucketService.saveConfig({
+                albums: config.albums,
+                siteSettings: updatedSettings,
+              });
+            } catch (e) {
+              // Silently ignore permission errors for non-admins
+              if ((e as any).code !== 'permission-denied') {
+                logger.warn('⚠️ Could not save auto-fixed config:', e);
+              }
+            }
+          }
 
           setAlbums(config.albums);
           setSiteSettings(updatedSettings);
-        } else {
-          setAlbums(config.albums);
-          setSiteSettings(config.siteSettings);
+          return;
         }
+
+        // 🎨 DEMO ROUTE: usa SEMPRE dati in-memory, ignorando albums Firestore
+        const demoAlbums = buildDemoAlbums();
+        logger.info('🎨 DEMO ROUTE: using in-memory demo albums (ignoring Firestore):', demoAlbums);
+        setAlbums(demoAlbums);
+        setSiteSettings({
+          ...updatedSettings,
+          appName: 'ClubGallery Demo',
+          siteUrl: 'https://www.clubgallery.com/demo',
+        });
       } catch (error) {
-        console.error('Failed to load app config:', error);
+        logger.error('Failed to load app config:', error);
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [isDemoRoute]);
 
   // Auto-save when albums change (for WebP URL updates)
   const [lastSaveTime, setLastSaveTime] = useState(0);
   useEffect(() => {
-    if (loading) {
+    if (loading || isDemoRoute) {
       return;
     } // Don't save during initial load
 
@@ -152,9 +173,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       try {
         await saveCurrentConfig(albums, siteSettings);
         setLastSaveTime(now);
-        console.log('💾 Auto-saved WebP URL updates');
+        logger.info('💾 Auto-saved WebP URL updates');
       } catch (error) {
-        console.warn('⚠️ Auto-save failed:', error);
+        if ((error as any).code === 'permission-denied') {
+          logger.info('ℹ️ Auto-save skipped (non-admin user)');
+        } else {
+          logger.warn('⚠️ Auto-save failed:', error);
+        }
       }
     };
 
@@ -164,7 +189,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // 🔄 Periodic WebP retry system for photos that need it
   useEffect(() => {
-    if (loading) {
+    if (loading || isDemoRoute) {
       return;
     }
 
@@ -183,7 +208,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         return;
       }
 
-      console.log(`🔄 Periodic WebP retry for ${photosNeedingRetry.length} photos`);
+      logger.info(`🔄 Periodic WebP retry for ${photosNeedingRetry.length} photos`);
 
       // Check each photo for WebP availability
       for (const photo of photosNeedingRetry) {
@@ -191,7 +216,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         // 🔒 Skip if photo is already being checked by queue system
         if (queue.activeChecks.has(photo.id)) {
-          console.log(`⏭️ Periodic retry skipping ${photo.id} - already being checked by queue`);
+          logger.info(`⏭️ Periodic retry skipping ${photo.id} - already being checked by queue`);
           continue;
         }
 
@@ -201,7 +226,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
           const webpUrls = await checkWebPGeneration(photo);
           if (webpUrls.optimizedUrl || webpUrls.thumbUrl || webpUrls.mediumUrl) {
-            console.log(`🎉 Periodic retry success for ${photo.id}:`, webpUrls);
+            logger.info(`🎉 Periodic retry success for ${photo.id}:`, webpUrls);
             // Remove retry flag and update with WebP URLs
             updatePhotoUrls(photo.id, {
               ...webpUrls,
@@ -209,7 +234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
           }
         } catch (error) {
-          console.warn(`⚠️ Periodic retry failed for ${photo.id}:`, error);
+          logger.warn(`⚠️ Periodic retry failed for ${photo.id}:`, error);
         } finally {
           // 🔓 Always unlock the photo when done
           queue.activeChecks.delete(photo.id);
@@ -229,7 +254,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // 🚨 EMERGENCY FALLBACK: Force fallback for photos stuck on "Optimizing..." after 3 minutes
     const emergencyFallbackId = setTimeout(
       () => {
-        console.log('🚨 Emergency fallback: Converting stuck photos to use original URLs');
+        logger.info('🚨 Emergency fallback: Converting stuck photos to use original URLs');
 
         albums.forEach((album) => {
           album.photos.forEach((photo) => {
@@ -240,7 +265,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               !photo.mediumUrl &&
               !photo.needsWebPRetry
             ) {
-              console.log(`🚨 Emergency fallback for stuck photo: ${photo.id}`);
+              logger.info(`🚨 Emergency fallback for stuck photo: ${photo.id}`);
               updatePhotoUrls(photo.id, {
                 optimizedUrl: photo.url,
                 thumbUrl: photo.url,
@@ -259,9 +284,72 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       clearTimeout(initialTimeoutId);
       clearTimeout(emergencyFallbackId);
     };
-  }, [albums, loading]);
+  }, [albums, loading, isDemoRoute]);
+
+  const buildDemoAlbums = (): Album[] => {
+    // Realistic placeholders for a nightclub/event theme
+    const demoImages = [
+      'https://images.unsplash.com/photo-1514525253361-bee8d41dfb7a?q=80&w=1000&auto=format&fit=crop', // Concert/Club
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000&auto=format&fit=crop', // Party
+      'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=1000&auto=format&fit=crop', // DJ
+      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000&auto=format&fit=crop', // Dancefloor
+      'https://images.unsplash.com/photo-1541532713592-79a0317b6b7a?q=80&w=1000&auto=format&fit=crop', // Cocktail
+      'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=1000&auto=format&fit=crop', // Crowd
+    ];
+
+    const makePhoto = (index: number, albumTitle: string, imageUrl: string): Photo => {
+      const id = generatePhotoId(photoIdCounterRef);
+      return {
+        id,
+        url: imageUrl,
+        optimizedUrl: imageUrl,
+        thumbUrl: imageUrl,
+        mediumUrl: imageUrl,
+        title: `${albumTitle} - Scatto #${index + 1}`,
+        description: `Un momento indimenticabile catturato durante ${albumTitle}. Atmosfera carica di energia e luci vibranti.`,
+      };
+    };
+
+    const album1Photos: Photo[] = Array.from({ length: 12 }).map((_, i) =>
+      makePhoto(i, 'Main Room - Closing Party', demoImages[i % demoImages.length])
+    );
+    const album2Photos: Photo[] = Array.from({ length: 12 }).map((_, i) =>
+      makePhoto(i, 'Privé VIP Experience', demoImages[(i + 2) % demoImages.length])
+    );
+    const album3Photos: Photo[] = Array.from({ length: 8 }).map((_, i) =>
+      makePhoto(i, 'Sunset Terrace Sessions', demoImages[(i + 4) % demoImages.length])
+    );
+
+    const album1: Album = {
+      id: generateAlbumId(),
+      title: 'Main Room - Closing Party',
+      coverPhotoUrl: album1Photos[0].url,
+      photos: album1Photos,
+    };
+
+    const album2: Album = {
+      id: generateAlbumId(),
+      title: 'Privé VIP Experience',
+      coverPhotoUrl: album2Photos[0].url,
+      photos: album2Photos,
+    };
+
+    const album3: Album = {
+      id: generateAlbumId(),
+      title: 'Sunset Terrace Sessions',
+      coverPhotoUrl: album3Photos[0].url,
+      photos: album3Photos,
+    };
+
+    return [album1, album2, album3];
+  };
 
   const saveCurrentConfig = async (updatedAlbums: Album[], updatedSettings: SiteSettings) => {
+    // Never persist demo data to Firestore
+    if (isDemoRoute) {
+      logger.info('💾 Skipping saveConfig in demo route (in-memory only)');
+      return;
+    }
     await bucketService.saveConfig({ albums: updatedAlbums, siteSettings: updatedSettings });
   };
 
@@ -347,11 +435,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Fire and forget - description generation won't block upload
       generatePhotoDescription(photoFile, siteSettings.geminiApiKey)
         .then((desc) => {
-          console.log('🤖 AI description generated:', desc);
+          logger.info('🤖 AI description generated:', desc);
           // TODO: Could update photo description in background if needed
         })
         .catch((err) => {
-          console.warn('⚠️ AI description failed:', err);
+          logger.warn('⚠️ AI description failed:', err);
         });
     }
 
@@ -418,10 +506,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Fire and forget - description generation won't block upload
       generatePhotoDescription(photoFile, siteSettings.geminiApiKey)
         .then((desc) => {
-          console.log('🤖 AI description generated:', desc);
+          logger.info('🤖 AI description generated:', desc);
         })
         .catch((err) => {
-          console.warn('⚠️ AI description failed:', err);
+          logger.warn('⚠️ AI description failed:', err);
         });
     }
 
@@ -502,7 +590,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         /* Not ready yet */
       }
     } catch (error) {
-      console.warn(`⚠️ Error checking WebP for ${photo.id}:`, error);
+      logger.warn(`⚠️ Error checking WebP for ${photo.id}:`, error);
     }
 
     return urls;
@@ -514,20 +602,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // 🔒 Skip if photo is already being checked
     if (queue.activeChecks.has(photo.id)) {
-      console.log(`🔄 Photo ${photo.id} already being checked - skipping queue add`);
+      logger.info(`🔄 Photo ${photo.id} already being checked - skipping queue add`);
       return;
     }
 
     // Check if photo already in queue
     const existingIndex = queue.queue.findIndex((item) => item.photo.id === photo.id);
     if (existingIndex >= 0) {
-      console.log(`🔄 Photo ${photo.id} already in WebP queue`);
+      logger.info(`🔄 Photo ${photo.id} already in WebP queue`);
       return;
     }
 
     // Add to queue
     queue.queue.push({ photo, attempts: 0 });
-    console.log(`➕ Added ${photo.id} to WebP queue (${queue.queue.length} total)`);
+    logger.info(`➕ Added ${photo.id} to WebP queue (${queue.queue.length} total)`);
 
     // Start processing if not already running
     if (!queue.processing) {
@@ -542,7 +630,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     queue.processing = true;
-    console.log(`🚦 Starting WebP queue processing (${queue.queue.length} photos)`);
+    logger.info(`🚦 Starting WebP queue processing (${queue.queue.length} photos)`);
 
     while (queue.queue.length > 0) {
       // Process up to maxConcurrent photos at once
@@ -554,7 +642,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
         // 🔒 Check if photo is already being processed
         if (queue.activeChecks.has(photo.id)) {
-          console.log(`⏭️ Skipping ${photo.id} - already being checked`);
+          logger.info(`⏭️ Skipping ${photo.id} - already being checked`);
           return false;
         }
 
@@ -562,12 +650,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         queue.activeChecks.add(photo.id);
 
         try {
-          console.log(`🔍 WebP check attempt ${attempts + 1}/${maxAttempts} for ${photo.id}`);
+          logger.info(`🔍 WebP check attempt ${attempts + 1}/${maxAttempts} for ${photo.id}`);
 
           const webpUrls = await checkWebPGeneration(photo);
 
           if (webpUrls.optimizedUrl || webpUrls.thumbUrl || webpUrls.mediumUrl) {
-            console.log(`🎉 WebP ready for ${photo.id}:`, webpUrls);
+            logger.info(`🎉 WebP ready for ${photo.id}:`, webpUrls);
             updatePhotoUrls(photo.id, {
               ...webpUrls,
               needsWebPRetry: false, // Clear retry flag when WebP found
@@ -580,7 +668,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             queue.queue.push({ photo, attempts: attempts + 1 });
             return false; // Will retry
           } else {
-            console.warn(
+            logger.warn(
               `⚠️ WebP timeout for ${photo.id} after ${maxAttempts} attempts - using original as fallback`
             );
             // 🚀 FALLBACK: Use original URL if WebP generation takes too long
@@ -593,7 +681,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return true; // Fallback applied
           }
         } catch (error) {
-          console.warn(`⚠️ WebP check error for ${photo.id}:`, error);
+          logger.warn(`⚠️ WebP check error for ${photo.id}:`, error);
 
           // Re-queue on error if under max attempts
           if (attempts + 1 < maxAttempts) {
@@ -615,7 +703,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     queue.processing = false;
-    console.log(`✅ WebP queue processing complete`);
+    logger.info(`✅ WebP queue processing complete`);
   };
 
   // 🔄 Manual refresh of WebP URLs for an album
@@ -625,14 +713,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return;
     }
 
-    console.log(`🔄 Manual WebP refresh for album ${albumId} (${album.photos.length} photos)`);
+    logger.info(`🔄 Manual WebP refresh for album ${albumId} (${album.photos.length} photos)`);
 
     // Add all photos to queue for immediate checking
     album.photos.forEach((photo) => {
       addToWebPQueue(photo);
     });
 
-    console.log(`✅ Added ${album.photos.length} photos to WebP queue for refresh`);
+    logger.info(`✅ Added ${album.photos.length} photos to WebP queue for refresh`);
   };
 
   const deletePhotosFromAlbum = async (albumId: string, photoIds: string[]) => {
@@ -791,7 +879,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const saveBatchPhotos = async (albumId: string, photos: Photo[]) => {
-    console.log(`💾 Adding ${photos.length} photos to album ${albumId}...`);
+    logger.info(`💾 Adding ${photos.length} photos to album ${albumId}...`);
 
     // 🔥 ONE SINGLE state update for all photos
     let finalAlbums: Album[] = [];
@@ -823,10 +911,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // 🔥 ONE SINGLE Firestore write for all photos
     await saveCurrentConfig(finalAlbums, siteSettings);
-    console.log(`✅ Batch saved ${photos.length} photos successfully`);
+    logger.info(`✅ Batch saved ${photos.length} photos successfully`);
 
     // 🚦 Add photos to WebP check queue (prevents timer overload)
-    console.log(`🚦 Adding ${photos.length} photos to WebP queue...`);
+    logger.info(`🚦 Adding ${photos.length} photos to WebP queue...`);
 
     // Add to queue with shorter initial delay
     setTimeout(() => {
@@ -838,23 +926,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const recoverFromStorage = async () => {
     try {
-      console.log('🔄 Starting recovery from Firebase Storage...');
+      logger.info('🔄 Starting recovery from Firebase Storage...');
 
       // List all files in uploads folder
       const uploadsRef = ref(storage, 'uploads/');
       const result = await listAll(uploadsRef);
 
-      console.log(`📁 Found ${result.items.length} files in Storage`);
+      logger.info(`📁 Found ${result.items.length} files in Storage`);
 
       // Group files by base name (original files only, not thumbnails)
       const originalFiles = result.items.filter(
         (item) => !item.name.includes('_thumb_') && !item.name.includes('_optimized')
       );
 
-      console.log(`📸 Found ${originalFiles.length} original photos`);
+      logger.info(`📸 Found ${originalFiles.length} original photos`);
 
       if (originalFiles.length === 0) {
-        console.log('❌ No photos found to recover');
+        logger.info('❌ No photos found to recover');
         return;
       }
 
@@ -866,7 +954,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const batchSize = 20;
       for (let i = 0; i < originalFiles.length; i += batchSize) {
         const batch = originalFiles.slice(i, i + batchSize);
-        console.log(
+        logger.info(
           `🔄 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(originalFiles.length / batchSize)}`
         );
 
@@ -913,7 +1001,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             return photo;
           } catch (error) {
-            console.error(`❌ Error processing ${item.name}:`, error);
+            logger.error(`❌ Error processing ${item.name}:`, error);
             return null;
           }
         });
@@ -926,7 +1014,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
-      console.log(`✅ Recovered ${recoveredPhotos.length} photos`);
+      logger.info(`✅ Recovered ${recoveredPhotos.length} photos`);
 
       // Create recovery album
       const recoveryAlbum: Album = {
@@ -951,18 +1039,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       await bucketService.saveConfig(updatedConfig);
 
-      console.log(
+      logger.info(
         `🎉 Recovery complete! Created album "${recoveryAlbum.title}" with ${recoveredPhotos.length} photos`
       );
     } catch (error) {
-      console.error('❌ Recovery failed:', error);
+      logger.error('❌ Recovery failed:', error);
       throw error;
     }
   };
 
   const resetToDefaults = async () => {
     try {
-      console.log('🔄 Resetting to default configuration...');
+      logger.info('🔄 Resetting to default configuration...');
 
       // Get fresh default configuration
       const defaultConfig = await bucketService.getConfig();
@@ -971,9 +1059,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setAlbums(defaultConfig.albums);
       setSiteSettings(defaultConfig.siteSettings);
 
-      console.log('✅ Reset to defaults completed');
+      logger.info('✅ Reset to defaults completed');
     } catch (error) {
-      console.error('❌ Reset to defaults failed:', error);
+      logger.error('❌ Reset to defaults failed:', error);
       throw error;
     }
   };

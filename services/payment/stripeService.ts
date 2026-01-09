@@ -9,6 +9,7 @@
 
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebaseConfig';
+import { logger } from '@/utils/logger';
 
 /**
  * Create checkout session via Cloud Function
@@ -18,7 +19,7 @@ export const createCheckoutSession = async (
   brandName: string
 ): Promise<{ sessionId: string; checkoutUrl: string; brandId: string }> => {
   try {
-    console.log('🛒 Creating checkout session for:', email, brandName);
+    logger.info('🛒 Creating checkout session for:', email, brandName);
 
     const createSession = httpsCallable<
       { email: string; brandName: string },
@@ -27,11 +28,11 @@ export const createCheckoutSession = async (
 
     const result = await createSession({ email, brandName });
 
-    console.log('✅ Checkout session created:', result.data.sessionId);
+    logger.info('✅ Checkout session created:', result.data.sessionId);
 
     return result.data;
   } catch (error: any) {
-    console.error('❌ Error creating checkout session:', error);
+    logger.error('❌ Error creating checkout session:', error);
 
     // Handle Firebase function errors
     if (error.code === 'already-exists') {
@@ -50,13 +51,13 @@ export const createCheckoutSession = async (
  */
 export const redirectToStripeCheckout = async (checkoutUrl: string): Promise<void> => {
   try {
-    console.log('🔄 Redirecting to Stripe checkout...');
-    console.log('Checkout URL:', checkoutUrl);
+    logger.info('🔄 Redirecting to Stripe checkout...');
+    logger.info('Checkout URL:', checkoutUrl);
 
     // Direct redirect to Stripe checkout URL
     window.location.href = checkoutUrl;
   } catch (error) {
-    console.error('❌ Error redirecting to checkout:', error);
+    logger.error('❌ Error redirecting to checkout:', error);
     throw error;
   }
 };
@@ -69,7 +70,7 @@ export const initiateCheckout = async (email: string, brandName: string): Promis
     const { checkoutUrl } = await createCheckoutSession(email, brandName);
     await redirectToStripeCheckout(checkoutUrl);
   } catch (error) {
-    console.error('❌ Error initiating checkout:', error);
+    logger.error('❌ Error initiating checkout:', error);
     throw error;
   }
 };
@@ -80,7 +81,7 @@ export const initiateCheckout = async (email: string, brandName: string): Promis
  */
 export const openCustomerPortal = async (stripeCustomerId: string): Promise<void> => {
   try {
-    console.log('🔄 Opening customer portal...');
+    logger.info('🔄 Opening customer portal...');
 
     const createPortalSession = httpsCallable<{ stripeCustomerId: string }, { url: string }>(
       functions,
@@ -92,7 +93,7 @@ export const openCustomerPortal = async (stripeCustomerId: string): Promise<void
     // Redirect to Stripe portal
     window.location.href = result.data.url;
   } catch (error) {
-    console.error('❌ Error opening customer portal:', error);
+    logger.error('❌ Error opening customer portal:', error);
     throw error;
   }
 };
@@ -104,10 +105,10 @@ export const validateCheckoutSession = async (sessionId: string): Promise<boolea
   try {
     // This would call a Cloud Function to check if payment was successful
     // For MVP, we'll just return true and rely on webhook
-    console.log('✅ Checkout session:', sessionId);
+    logger.info('✅ Checkout session:', sessionId);
     return true;
   } catch (error) {
-    console.error('❌ Error validating session:', error);
+    logger.error('❌ Error validating session:', error);
     return false;
   }
 };

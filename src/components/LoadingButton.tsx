@@ -7,7 +7,7 @@
 
 import React from 'react';
 
-interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface LoadingButtonProps extends React.ComponentPropsWithoutRef<'button'> {
   /**
    * Se true, mostra loading state
    */
@@ -32,6 +32,16 @@ interface LoadingButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
    * Contenuto del bottone (quando non in loading)
    */
   children: React.ReactNode;
+
+  /**
+   * Classi CSS aggiuntive
+   */
+  className?: string;
+
+  /**
+   * Se true, il bottone è disabilitato
+   */
+  disabled?: boolean;
 }
 
 /**

@@ -61,13 +61,15 @@ function generateRandomString(length = 8) {
 async function sendWelcomeEmail(email, password, subdomain, brandName) {
   // TODO: Integrate with SendGrid or Resend
   // For MVP, just log the credentials
-  console.log('📧 Welcome Email:');
-  console.log('  To:', email);
+  console.log('📧 E-mail di Benvenuto:');
+  console.log('  A:', email);
   console.log('  Brand:', brandName);
   console.log('  Dashboard:', `https://${subdomain}/dashboard`);
-  console.log('  Password:', password);
+  console.log('  Password Temporanea:', password);
   console.log('  ---');
-  console.log('  ⚠️  TODO: Integrate real email service (SendGrid/Resend)');
+  console.log(
+    '  ⚠️ Prossimo Step: Integrare servizio email (SendGrid/Resend) per inviare queste credenziali.'
+  );
 
   // Placeholder: Return success
   return Promise.resolve();

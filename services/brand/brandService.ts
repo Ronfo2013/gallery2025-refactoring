@@ -20,6 +20,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { Brand, BrandBranding } from '../../types';
+import { logger } from '@/utils/logger';
 
 /**
  * Get brand by domain (subdomain or custom domain)
@@ -33,7 +34,7 @@ export const getBrandByDomain = async (domain: string): Promise<Brand | null> =>
       .replace(/:\d+$/, '')
       .toLowerCase();
 
-    console.log('🔍 Looking for brand with domain:', cleanDomain);
+    logger.info('🔍 Looking for brand with domain:', cleanDomain);
 
     // First, try to find by subdomain
     const subdomainQuery = query(
@@ -46,7 +47,7 @@ export const getBrandByDomain = async (domain: string): Promise<Brand | null> =>
 
     if (!subdomainSnapshot.empty) {
       const data = subdomainSnapshot.docs[0].data();
-      console.log('✅ Brand found by subdomain:', data.name);
+      logger.info('✅ Brand found by subdomain:', data.name);
       return {
         id: subdomainSnapshot.docs[0].id,
         ...data,
@@ -63,10 +64,10 @@ export const getBrandByDomain = async (domain: string): Promise<Brand | null> =>
     // TODO: In future, also check custom domain
     // For MVP, we only support subdomains
 
-    console.log('❌ No brand found for domain:', cleanDomain);
+    logger.info('❌ No brand found for domain:', cleanDomain);
     return null;
   } catch (error) {
-    console.error('❌ Error fetching brand by domain:', error);
+    logger.error('❌ Error fetching brand by domain:', error);
     throw error;
   }
 };
@@ -78,7 +79,7 @@ export const getBrandBySlug = async (slug: string): Promise<Brand | null> => {
   try {
     const cleanSlug = slug.trim().toLowerCase();
 
-    console.log('🔍 Looking for brand with slug:', cleanSlug);
+    logger.info('🔍 Looking for brand with slug:', cleanSlug);
 
     const slugQuery = query(
       collection(db, 'brands'),
@@ -90,7 +91,7 @@ export const getBrandBySlug = async (slug: string): Promise<Brand | null> => {
 
     if (!slugSnapshot.empty) {
       const data = slugSnapshot.docs[0].data();
-      console.log('✅ Brand found by slug:', data.name);
+      logger.info('✅ Brand found by slug:', data.name);
       return {
         id: slugSnapshot.docs[0].id,
         ...data,
@@ -115,7 +116,7 @@ export const getBrandBySlug = async (slug: string): Promise<Brand | null> => {
 
     if (!subdomainSnapshot.empty) {
       const data = subdomainSnapshot.docs[0].data();
-      console.log('✅ Brand found by subdomain fallback:', data.name);
+      logger.info('✅ Brand found by subdomain fallback:', data.name);
       return {
         id: subdomainSnapshot.docs[0].id,
         ...data,
@@ -129,10 +130,10 @@ export const getBrandBySlug = async (slug: string): Promise<Brand | null> => {
       } as Brand;
     }
 
-    console.log('❌ No brand found for slug/subdomain:', cleanSlug);
+    logger.info('❌ No brand found for slug/subdomain:', cleanSlug);
     return null;
   } catch (error) {
-    console.error('❌ Error fetching brand by slug:', error);
+    logger.error('❌ Error fetching brand by slug:', error);
     throw error;
   }
 };
@@ -146,7 +147,7 @@ export const getBrandById = async (brandId: string): Promise<Brand | null> => {
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
-      console.log('❌ Brand not found:', brandId);
+      logger.info('❌ Brand not found:', brandId);
       return null;
     }
 
@@ -163,7 +164,7 @@ export const getBrandById = async (brandId: string): Promise<Brand | null> => {
       },
     } as Brand;
   } catch (error) {
-    console.error('❌ Error fetching brand by ID:', error);
+    logger.error('❌ Error fetching brand by ID:', error);
     throw error;
   }
 };
@@ -176,7 +177,7 @@ export const updateBrandBranding = async (
   branding: Partial<BrandBranding>
 ): Promise<void> => {
   try {
-    console.log('🎨 Updating branding for brand:', brandId);
+    logger.info('🎨 Updating branding for brand:', brandId);
 
     const docRef = doc(db, 'brands', brandId);
 
@@ -204,9 +205,9 @@ export const updateBrandBranding = async (
 
     await updateDoc(docRef, updateData);
 
-    console.log('✅ Branding updated successfully');
+    logger.info('✅ Branding updated successfully');
   } catch (error) {
-    console.error('❌ Error updating branding:', error);
+    logger.error('❌ Error updating branding:', error);
     throw error;
   }
 };
@@ -220,13 +221,13 @@ export const getBrandIdFromUser = async (userId: string): Promise<string | null>
     const superuserSnap = await getDoc(superuserRef);
 
     if (!superuserSnap.exists()) {
-      console.log('❌ Superuser not found:', userId);
+      logger.info('❌ Superuser not found:', userId);
       return null;
     }
 
     return superuserSnap.data().brandId;
   } catch (error) {
-    console.error('❌ Error getting brand from user:', error);
+    logger.error('❌ Error getting brand from user:', error);
     throw error;
   }
 };
@@ -241,7 +242,7 @@ export const isSlugAvailable = async (slug: string): Promise<boolean> => {
     const snapshot = await getDocs(q);
     return snapshot.empty;
   } catch (error) {
-    console.error('❌ Error checking slug availability:', error);
+    logger.error('❌ Error checking slug availability:', error);
     throw error;
   }
 };

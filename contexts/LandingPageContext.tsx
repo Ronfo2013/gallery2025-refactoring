@@ -7,10 +7,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { LandingPageSettings } from '../types';
-import {
-  getLandingPageSettings,
-  getDefaultLandingPageSettings,
-} from '../services/platform/landingPageService';
+import { getLandingPageSettings, getDefaultLandingPageSettings } from '../services/platform/landingPageService';
+import { logger } from '@/utils/logger';
 
 interface LandingPageContextType {
   settings: LandingPageSettings | null;
@@ -37,24 +35,24 @@ export const LandingPageProvider: React.FC<LandingPageProviderProps> = ({ childr
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Loading landing page settings...');
+      logger.info('🔄 Loading landing page settings...');
       const data = await getLandingPageSettings();
 
       if (data) {
-        console.log('✅ Landing page settings loaded from Firestore');
+        logger.info('✅ Landing page settings loaded from Firestore');
         setSettings(data);
         setUseDefaults(false);
       } else {
-        console.log('ℹ️  Using default landing page settings');
+        logger.info('ℹ️  Using default landing page settings');
         setSettings(getDefaultLandingPageSettings());
         setUseDefaults(true);
       }
     } catch (err: any) {
-      console.error('❌ Error loading landing page settings:', err);
+      logger.error('❌ Error loading landing page settings:', err);
       setError(err.message || 'Failed to load landing page settings');
 
       // Fallback to defaults on error
-      console.log('⚠️  Falling back to default settings');
+      logger.warn('⚠️  Falling back to default settings');
       setSettings(getDefaultLandingPageSettings());
       setUseDefaults(true);
     } finally {
@@ -75,7 +73,7 @@ export const LandingPageProvider: React.FC<LandingPageProviderProps> = ({ childr
     if (settings?.branding) {
       const { primaryColor, secondaryColor, accentColor } = settings.branding;
 
-      console.log('🎨 Applying landing page branding:', {
+      logger.info('🎨 Applying landing page branding:', {
         primaryColor,
         secondaryColor,
         accentColor,

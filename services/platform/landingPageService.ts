@@ -5,8 +5,9 @@
  * Permette al SuperAdmin di personalizzare tutti gli elementi della landing.
  */
 
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { logger } from '@/utils/logger';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
 import { LandingPageSettings } from '../../types';
 
@@ -25,10 +26,10 @@ export async function getLandingPageSettings(): Promise<LandingPageSettings | nu
     }
 
     // Se non esiste, restituisci null (verrà usato il fallback statico)
-    console.log('ℹ️  No landing page settings found, using default');
+    logger.info('ℹ️  No landing page settings found, using default');
     return null;
   } catch (error) {
-    console.error('❌ Error fetching landing page settings:', error);
+    logger.error('❌ Error fetching landing page settings:', error);
     throw error;
   }
 }
@@ -53,9 +54,9 @@ export async function updateLandingPageSettings(
       { merge: true }
     );
 
-    console.log('✅ Landing page settings updated');
+    logger.info('✅ Landing page settings updated');
   } catch (error) {
-    console.error('❌ Error updating landing page settings:', error);
+    logger.error('❌ Error updating landing page settings:', error);
     throw error;
   }
 }
@@ -72,10 +73,10 @@ export async function uploadLandingImage(
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
-    console.log('✅ Landing image uploaded:', path);
+    logger.info('✅ Landing image uploaded:', path);
     return { url, path: `platform/landing/${path}` };
   } catch (error) {
-    console.error('❌ Error uploading landing image:', error);
+    logger.error('❌ Error uploading landing image:', error);
     throw error;
   }
 }
@@ -87,9 +88,9 @@ export async function deleteLandingImage(path: string): Promise<void> {
   try {
     const storageRef = ref(storage, path);
     await deleteObject(storageRef);
-    console.log('✅ Landing image deleted:', path);
+    logger.info('✅ Landing image deleted:', path);
   } catch (error) {
-    console.error('❌ Error deleting landing image:', error);
+    logger.error('❌ Error deleting landing image:', error);
     throw error;
   }
 }
@@ -100,198 +101,200 @@ export async function deleteLandingImage(path: string): Promise<void> {
 export function getDefaultLandingPageSettings(): LandingPageSettings {
   return {
     hero: {
-      title: 'Gestisci la tua Gallery con Stile',
-      subtitle: 'Piattaforma multi-tenant per creare e gestire gallerie fotografiche professionali',
-      ctaText: 'Inizia Gratis',
+      title: 'ClubGallery: La Piattaforma definitiva per le tue Foto',
+      subtitle:
+        'Crea gallerie fotografiche professionali per i tuoi locali o eventi in pochi secondi. Branding unico, velocità estrema e gestione semplificata.',
+      ctaText: 'Provalo Gratis',
       ctaUrl: '#pricing',
     },
     gallery: {
       enabled: true,
-      title: 'Guarda Come Funziona',
-      subtitle: 'Una gallery professionale pronta in pochi minuti',
+      title: 'Gallerie che emozionano',
+      subtitle: "Il tuo lavoro merita una presentazione all'altezza della tua professionalità.",
       style: 'live-demo',
       demoImages: [
         {
           id: '1',
           url: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=800&auto=format&fit=crop',
-          title: 'Wedding Photography',
+          title: 'Nightclub Photography',
           order: 1,
         },
         {
           id: '2',
           url: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800&auto=format&fit=crop',
-          title: 'Portrait Session',
+          title: 'Disco Music Live',
           order: 2,
         },
         {
           id: '3',
           url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&auto=format&fit=crop',
-          title: 'Event Coverage',
+          title: 'VIP Lounge Events',
           order: 3,
         },
         {
           id: '4',
           url: 'https://images.unsplash.com/photo-1502982899975-c0eecd3f3f71?w=800&auto=format&fit=crop',
-          title: 'Fashion Shoot',
+          title: 'Fashion Show Night',
           order: 4,
         },
         {
           id: '5',
           url: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=800&auto=format&fit=crop',
-          title: 'Landscape Photography',
+          title: 'Beach Club Party',
           order: 5,
         },
         {
           id: '6',
           url: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=800&auto=format&fit=crop',
-          title: 'Urban Architecture',
+          title: 'Corporate Events',
           order: 6,
         },
         {
           id: '7',
           url: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&auto=format&fit=crop',
-          title: 'Product Photography',
+          title: 'Concert Stage',
           order: 7,
         },
         {
           id: '8',
           url: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800&auto=format&fit=crop',
-          title: 'Nature Macro',
+          title: 'Festival Moments',
           order: 8,
         },
       ],
     },
     features: {
-      title: 'Tutto ciò che serve per la tua Gallery',
-      subtitle: 'Strumenti professionali per fotografi e creativi',
+      title: 'Tutto il necessario per il tuo Club',
+      subtitle: 'Strumenti avanzati pensati per chi vive di eventi e spettacolo.',
       items: [
         {
           id: '1',
           icon: '🎨',
-          title: 'Branding Personalizzato',
-          description: 'Logo, colori e dominio personalizzati per la tua gallery',
+          title: 'Branding 100% Personalizzabile',
+          description: 'Inserisci il logo e i colori del tuo locale in ogni galleria.',
           order: 1,
         },
         {
           id: '2',
           icon: '⚡',
-          title: 'Performance Ottimizzate',
-          description: 'Thumbnails automatiche e formato WebP per caricamenti rapidi',
+          title: 'Caricamenti Ultra-Rapidi',
+          description:
+            "Ottimizzazione automatica WebP per un'esperienza fluida su ogni connessione.",
           order: 2,
         },
         {
           id: '3',
           icon: '📱',
-          title: 'Responsive Design',
-          description: 'La tua gallery perfetta su ogni dispositivo',
+          title: 'Mobile First',
+          description:
+            'I tuoi clienti potranno scaricare le foto direttamente dal loro smartphone.',
           order: 3,
         },
         {
           id: '4',
           icon: '🔒',
-          title: 'Sicuro e Affidabile',
-          description: 'Hosting su Firebase con backup automatici',
+          title: 'Archivio Sicuro',
+          description:
+            'Tutte le tue foto salvate in cloud con la massima sicurezza e affidabilità.',
           order: 4,
         },
         {
           id: '5',
           icon: '📊',
-          title: 'Analytics Integrati',
-          description: 'Google Analytics e Meta Pixel per monitorare i visitatori',
+          title: 'Statistiche Avanzate',
+          description: 'Scopri quante persone visualizzano e scaricano le tue foto.',
           order: 5,
         },
         {
           id: '6',
           icon: '💳',
-          title: 'Pagamenti Stripe',
-          description: 'Sistema di pagamento integrato e sicuro',
+          title: 'Sistema Multi-Tenant',
+          description: 'Gestisci più locali o eventi con un unico account SuperAdmin.',
           order: 6,
         },
       ],
     },
     pricing: {
-      title: 'Scegli il Piano Perfetto',
-      subtitle: 'Prezzi trasparenti, nessun costo nascosto',
+      title: 'Piani su misura per ogni esigenza',
+      subtitle: 'Trasparenza totale, nessun costo di attivazione.',
       plans: [
         {
           id: '1',
-          name: 'Starter',
-          price: 99,
+          name: 'Classic',
+          price: 49,
           currency: 'EUR',
-          interval: 'one-time',
+          interval: 'monthly',
           features: [
-            'Gallery personalizzata',
-            'Subdomain incluso',
-            '1000 foto',
-            'Thumbnails automatiche',
-            'Analytics base',
+            '1 Locale / Brand',
+            'Gallery Illimitate',
+            'Sottodominio dedicato',
+            '5000 Foto incluse',
+            'Assistenza via Email',
           ],
           highlighted: false,
-          ctaText: 'Acquista Ora',
-          stripeProductId: 'prod_TS1EaWokTNEIY1',
-          stripePriceId: 'price_xxx',
+          ctaText: 'Attiva Classic',
+          stripeProductId: 'prod_classic',
+          stripePriceId: 'price_classic',
           order: 1,
         },
         {
           id: '2',
-          name: 'Professional',
-          price: 199,
+          name: 'Pro',
+          price: 99,
           currency: 'EUR',
-          interval: 'one-time',
+          interval: 'monthly',
           features: [
-            'Tutto da Starter',
-            'Dominio personalizzato',
-            '5000 foto',
-            'Google Analytics',
-            'Meta Pixel',
-            'Supporto prioritario',
+            'Fino a 3 Locali / Brand',
+            'Dominio Personalizzato',
+            '20.000 Foto incluse',
+            'Report Mensili via Email',
+            'Assistenza Prioritaria',
           ],
           highlighted: true,
-          ctaText: 'Inizia Ora',
-          stripeProductId: 'prod_TS1EaWokTNEIY1',
-          stripePriceId: 'price_xxx',
+          ctaText: 'Scegli Pro',
+          stripeProductId: 'prod_pro',
+          stripePriceId: 'price_pro',
           order: 2,
         },
         {
           id: '3',
-          name: 'Enterprise',
-          price: 499,
+          name: 'Agency',
+          price: 249,
           currency: 'EUR',
-          interval: 'one-time',
+          interval: 'monthly',
           features: [
-            'Tutto da Professional',
-            'Foto illimitate',
-            'Multi-admin',
-            'White label',
-            'API access',
-            'Supporto dedicato',
+            'Locali Illimitati',
+            'White Label (Logo ClubGallery rimosso)',
+            'Spazio Archiviazione Illimitato',
+            'API Personalizzate',
+            'Account Manager Dedicato',
           ],
           highlighted: false,
-          ctaText: 'Contattaci',
-          stripeProductId: 'prod_TS1EaWokTNEIY1',
-          stripePriceId: 'price_xxx',
+          ctaText: 'Contatta il Team',
+          stripeProductId: 'prod_agency',
+          stripePriceId: 'price_agency',
           order: 3,
         },
       ],
     },
     testimonials: {
       enabled: false,
-      title: 'Cosa dicono i nostri clienti',
+      title: 'Dicono di noi',
       items: [],
     },
     footer: {
-      companyName: 'Gallery Platform',
-      tagline: 'La tua gallery, il tuo brand',
+      companyName: 'ClubGallery SaaS',
+      tagline: "L'emozione dei tuoi eventi, immortalata e condivisa.",
       social: {
-        facebook: '',
-        instagram: '',
+        facebook: 'https://facebook.com/clubgallery',
+        instagram: 'https://instagram.com/clubgallery',
         twitter: '',
         linkedin: '',
       },
       contact: {
-        email: 'info@example.com',
-        phone: '',
-        address: '',
+        email: 'info@clubgallery.com',
+        phone: '+39 012 3456789',
+        address: 'Milano, Italia',
       },
       links: [
         {
@@ -307,18 +310,18 @@ export function getDefaultLandingPageSettings(): LandingPageSettings {
           order: 2,
         },
       ],
-      copyright: '© 2025 Gallery Platform. All rights reserved.',
+      copyright: '© 2025 ClubGallery. Tutti i diritti riservati.',
     },
     branding: {
-      primaryColor: '#3b82f6',
-      secondaryColor: '#8b5cf6',
-      accentColor: '#10b981',
+      primaryColor: '#6366f1',
+      secondaryColor: '#a855f7',
+      accentColor: '#f43f5e',
     },
     seo: {
-      title: 'Gallery Platform - Crea la tua Gallery Professionale',
+      title: 'ClubGallery - Gestione Gallerie Fotografiche per Locali e Discoteche',
       description:
-        'Piattaforma multi-tenant per creare e gestire gallerie fotografiche professionali con branding personalizzato',
-      keywords: ['gallery', 'fotografia', 'portfolio', 'multi-tenant', 'saas'],
+        'La piattaforma professionale per gestire le foto dei tuoi eventi. Branding personalizzato, ottimizzazione immagini e condivisione rapida.',
+      keywords: ['discoteca', 'locali', 'fotografia eventi', 'club gallery', 'saas gallery'],
     },
   };
 }
@@ -332,10 +335,10 @@ export async function initializeDefaultLandingPage(userId: string): Promise<void
     if (!existing) {
       const defaults = getDefaultLandingPageSettings();
       await updateLandingPageSettings(defaults, userId);
-      console.log('✅ Default landing page settings initialized');
+      logger.info('✅ Default landing page settings initialized');
     }
   } catch (error) {
-    console.error('❌ Error initializing default landing page:', error);
+    logger.error('❌ Error initializing default landing page:', error);
     throw error;
   }
 }

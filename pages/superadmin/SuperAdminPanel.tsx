@@ -12,6 +12,8 @@
  * - Alerts & Monitoring
  */
 
+import { logger } from '@/utils/logger';
+import clsx from 'clsx';
 import {
   AlertCircleIcon,
   BarChartIcon,
@@ -25,11 +27,15 @@ import {
   SettingsIcon,
   TrendingUpIcon,
   UsersIcon,
-  XCircleIcon,
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLogin from '../../components/AdminLogin';
+import {
+  LandingPageEditor,
+  LandingPageEditorHandle,
+} from '../../components/landing-editor/LandingPageEditor';
+import GlassAuthLayout from '../../components/layout/GlassAuthLayout';
 import { useFirebaseAuth } from '../../hooks/useFirebaseAuth';
 import {
   getBrandsStatistics,
@@ -40,12 +46,8 @@ import {
   updateAnalytics,
   updatePlatformSettings,
 } from '../../services/platform/platformService';
-import { Button, Card, CardBody, CardHeader, StatsCard } from '../../src/components/ui';
+import { Button, Card, CardBody, CardHeader, Input, StatsCard } from '../../src/components/ui';
 import { ActivityLog, PlatformSettings, SystemHealth } from '../../types';
-import {
-  LandingPageEditor,
-  LandingPageEditorHandle,
-} from '../../components/landing-editor/LandingPageEditor';
 import BrandsManager from './tabs/BrandsManager';
 
 const SuperAdminPanel: React.FC = () => {
@@ -94,7 +96,7 @@ const SuperAdminPanel: React.FC = () => {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('Error loading brand stats:', error);
+          logger.error('Error loading brand stats:', error);
         }
       } finally {
         if (!cancelled) {
@@ -149,7 +151,7 @@ const SuperAdminPanel: React.FC = () => {
         setSystemHealth(healthData);
         setActivityLogs(logsData);
       } catch (error) {
-        console.error('Error loading data:', error);
+        logger.error('Error loading data:', error);
         alert('Errore nel caricamento dei dati');
       } finally {
         setLoading(false);
@@ -205,7 +207,7 @@ const SuperAdminPanel: React.FC = () => {
       await updateAnalytics(); // Update analytics after save
       alert('✅ Impostazioni salvate con successo!');
     } catch (error) {
-      console.error('Error saving settings:', error);
+      logger.error('Error saving settings:', error);
       alert('❌ Errore nel salvataggio');
     } finally {
       setSaving(false);
@@ -214,17 +216,21 @@ const SuperAdminPanel: React.FC = () => {
 
   // Show login form if not authenticated
   if (!isAuthenticated && !authLoading) {
-    return <AdminLogin onLogin={login} onResetPassword={resetPassword} />;
+    return (
+      <GlassAuthLayout
+        title="SuperAdmin Login"
+        subtitle="Autenticati per gestire sistema, SEO, brands e analytics."
+      >
+        <AdminLogin onLogin={login} onResetPassword={resetPassword} />
+      </GlassAuthLayout>
+    );
   }
 
   if (authLoading || loading || !isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center admin-bg">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-50">
         <div className="text-center animate-scale-in">
-          <div
-            className="spinner spinner-lg mb-4 mx-auto"
-            style={{ borderTopColor: 'var(--admin-accent)' }}
-          ></div>
+          <div className="spinner spinner-lg mb-4 mx-auto !border-t-accent-indigo"></div>
           <p>Loading SuperAdmin Panel...</p>
         </div>
       </div>
@@ -233,8 +239,8 @@ const SuperAdminPanel: React.FC = () => {
 
   if (!settings) {
     return (
-      <div className="min-h-screen flex items-center justify-center admin-bg">
-        <p className="text-red-500">Error: Unable to load settings</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-50">
+        <p className="text-red-400">Error: Unable to load settings</p>
       </div>
     );
   }
@@ -251,962 +257,615 @@ const SuperAdminPanel: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen p-8 slide-up admin-bg">
-      <div className="container-xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="heading-lg mb-2 admin-text">🔐 SuperAdmin Panel</h1>
-          <p className="body-lg admin-text-muted">
-            Gestione completa della piattaforma {settings.systemName}
-          </p>
-        </div>
+    <div className="min-h-screen relative bg-slate-950 text-slate-50">
+      {/* Background blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-24 -right-32 h-80 w-80 rounded-full bg-fuchsia-500/30 blur-3xl" />
+        <div className="absolute top-40 -left-24 h-72 w-72 rounded-full bg-sky-500/30 blur-3xl" />
+        <div className="absolute bottom-[-4rem] right-1/3 h-64 w-64 rounded-full bg-emerald-400/25 blur-3xl" />
+      </div>
 
-        {/* System Health Banner */}
-        {systemHealth && (
-          <Card
-            className="mb-8"
-            style={{
-              backgroundColor:
-                systemHealth.status === 'healthy'
-                  ? 'rgba(16, 185, 129, 0.1)'
-                  : systemHealth.status === 'degraded'
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(239, 68, 68, 0.1)',
-              border: `2px solid ${
-                systemHealth.status === 'healthy'
-                  ? '#10b981'
-                  : systemHealth.status === 'degraded'
-                    ? '#f59e0b'
-                    : '#ef4444'
-              }`,
-            }}
-          >
-            <CardBody>
-              <div className="flex items-center gap-4">
-                {systemHealth.status === 'healthy' ? (
-                  <CheckCircleIcon className="w-8 h-8 text-green-400" />
-                ) : systemHealth.status === 'degraded' ? (
-                  <AlertCircleIcon className="w-8 h-8 text-yellow-400" />
-                ) : (
-                  <XCircleIcon className="w-8 h-8 text-red-400" />
-                )}
-                <div className="flex-1">
-                  <h3 className="font-bold text-xl mb-2 admin-text">
-                    System Status: {systemHealth.status.toUpperCase()}
-                  </h3>
-                  <div className="flex gap-6 text-sm admin-text-muted">
-                    <span>
-                      ⏱️ Uptime: <strong>{systemHealth.uptime}%</strong>
-                    </span>
-                    <span>
-                      ⚡ Response: <strong>{systemHealth.responseTime}ms</strong>
-                    </span>
-                    <span>
-                      ❌ Errors: <strong>{systemHealth.errorRate}%</strong>
-                    </span>
-                  </div>
-                </div>
+      <div className="relative z-10 p-6 md:p-10 animate-fade-in scrollbar-premium">
+        <div className="max-w-[1600px] mx-auto">
+          {/* Header Section */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-accent-rose uppercase tracking-[0.2em] mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent-rose animate-pulse" />
+                Central Control Unit
               </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* Tabs Navigation */}
-        <Card className="mb-8">
-          <CardBody className="p-2">
-            <div className="flex gap-2 overflow-x-auto">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all whitespace-nowrap hover-lift"
-                  style={{
-                    backgroundColor: activeTab === tab.id ? '#1e293b' : 'transparent',
-                    color: activeTab === tab.id ? '#60a5fa' : '#94a3b8',
-                    borderBottom:
-                      activeTab === tab.id ? '2px solid #60a5fa' : '2px solid transparent',
-                  }}
-                >
-                  {tab.icon}
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+              <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight">
+                🔐 {settings.systemName} <span className="text-accent-indigo">Core</span>
+              </h1>
             </div>
-          </CardBody>
-        </Card>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="neon-rose"
+                size="lg"
+                onClick={handleSaveSettings}
+                loading={saving}
+                icon={<SaveIcon className="w-5 h-5" />}
+              >
+                SALVA CONFIGURAZIONE
+              </Button>
+            </div>
+          </div>
 
-        {/* Tab Content */}
-        {activeTab === 'system' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <SettingsIcon className="w-6 h-6 admin-accent" />
-                <h2 className="text-2xl font-bold admin-text">Informazioni Sistema</h2>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="admin-label">Nome Sistema</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.systemName}
-                    onChange={(e) => setSettings({ ...settings, systemName: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Versione</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.systemVersion}
-                    onChange={(e) => setSettings({ ...settings, systemVersion: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Status Sistema</label>
-                  <select
-                    className="admin-input"
-                    value={settings.systemStatus}
-                    onChange={(e) =>
-                      setSettings({ ...settings, systemStatus: e.target.value as any })
-                    }
-                  >
-                    <option value="operational">✅ Operational</option>
-                    <option value="maintenance">🔧 Maintenance</option>
-                    <option value="degraded">⚠️ Degraded</option>
-                  </select>
-                </div>
-
-                {settings.systemStatus === 'maintenance' && (
-                  <div>
-                    <label className="admin-label">Messaggio Manutenzione</label>
-                    <input
-                      type="text"
-                      className="admin-input"
-                      value={settings.maintenanceMessage || ''}
-                      onChange={(e) =>
-                        setSettings({ ...settings, maintenanceMessage: e.target.value })
-                      }
-                      placeholder="Es: Manutenzione programmata fino alle 18:00"
-                    />
-                  </div>
+          {/* Top Intelligence Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
+            {/* Health Summary (Span 2) */}
+            {systemHealth && (
+              <div
+                className={clsx(
+                  'glass-card p-6 lg:col-span-2 flex items-center gap-6 border-l-4',
+                  systemHealth.status === 'healthy' ? 'border-l-emerald-500' : 'border-l-rose-500'
                 )}
-              </div>
-
-              <div className="border-t pt-4" style={{ borderColor: 'var(--admin-border)' }}>
-                <h3 className="text-lg font-semibold mb-4 admin-text">Feature Flags</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.features.allowSignup}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          features: { ...settings.features, allowSignup: e.target.checked },
-                        })
-                      }
-                      className="w-5 h-5"
-                    />
-                    <span>Permetti nuove registrazioni</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.features.allowCustomDomains}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          features: { ...settings.features, allowCustomDomains: e.target.checked },
-                        })
-                      }
-                      className="w-5 h-5"
-                    />
-                    <span>Permetti domini custom</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.features.allowGoogleOAuth}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          features: { ...settings.features, allowGoogleOAuth: e.target.checked },
-                        })
-                      }
-                      className="w-5 h-5"
-                    />
-                    <span>Google OAuth per utenti finali</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.features.maintenanceMode}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          features: { ...settings.features, maintenanceMode: e.target.checked },
-                        })
-                      }
-                      className="w-5 h-5"
-                    />
-                    <span className="text-red-400 font-bold">⚠️ Modalità Manutenzione</span>
-                  </label>
+              >
+                <div
+                  className={clsx(
+                    'w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl',
+                    systemHealth.status === 'healthy'
+                      ? 'bg-emerald-500/10 text-emerald-400'
+                      : 'bg-rose-500/10 text-rose-400'
+                  )}
+                >
+                  {systemHealth.status === 'healthy' ? (
+                    <CheckCircleIcon className="w-10 h-10" />
+                  ) : (
+                    <AlertCircleIcon className="w-10 h-10" />
+                  )}
                 </div>
-              </div>
-
-              <div className="border-t pt-4" style={{ borderColor: 'var(--admin-border)' }}>
-                <h3 className="text-lg font-semibold mb-4 admin-text">Alerts & Notifications</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="admin-label">Email Notifiche</label>
-                    <input
-                      type="email"
-                      className="admin-input"
-                      value={settings.alerts.notificationEmail || ''}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          alerts: { ...settings.alerts, notificationEmail: e.target.value },
-                        })
-                      }
-                      placeholder="admin@tuodominio.com"
-                    />
-                  </div>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={settings.alerts.emailNotifications}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          alerts: { ...settings.alerts, emailNotifications: e.target.checked },
-                        })
-                      }
-                      className="w-5 h-5"
-                    />
-                    <span>Abilita notifiche email per errori critici</span>
-                  </label>
-
-                  <div className="col-span-2">
-                    <div
-                      className="rounded-lg p-4"
-                      style={{
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        border: '1px solid #ef4444',
-                      }}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-black text-white uppercase tracking-tighter">
+                      System Pulse
+                    </h3>
+                    <span
+                      className={clsx(
+                        'px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest',
+                        systemHealth.status === 'healthy'
+                          ? 'bg-emerald-500 text-black'
+                          : 'bg-rose-500 text-white'
+                      )}
                     >
-                      <p className="text-sm admin-text">
-                        <strong>Errori Critici:</strong> {settings.alerts.criticalErrors}
-                        {settings.alerts.lastErrorTimestamp && (
-                          <span className="ml-2">
-                            (Ultimo:{' '}
-                            {new Date(settings.alerts.lastErrorTimestamp).toLocaleString('it-IT')})
-                          </span>
-                        )}
-                      </p>
+                      {systemHealth.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-2 bg-white/5 rounded-lg border border-white/5">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase">Uptime</p>
+                      <p className="text-sm font-black text-white">{systemHealth.uptime}%</p>
+                    </div>
+                    <div className="text-center p-2 bg-white/5 rounded-lg border border-white/5">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase">Latency</p>
+                      <p className="text-sm font-black text-white">{systemHealth.responseTime}ms</p>
+                    </div>
+                    <div className="text-center p-2 bg-white/5 rounded-lg border border-white/5">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase">Load</p>
+                      <p className="text-sm font-black text-white">{systemHealth.errorRate}%</p>
                     </div>
                   </div>
                 </div>
               </div>
-            </CardBody>
-          </Card>
-        )}
+            )}
 
-        {/* SEO TAB */}
-        {activeTab === 'seo' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <SearchIcon className="w-6 h-6 admin-accent" />
-                <h2 className="text-2xl font-bold admin-text">SEO & AI Search Optimization</h2>
+            {/* Stats Cards */}
+            <StatsCard
+              label="Total Brands"
+              value={brandsStats.total}
+              icon={<BuildingIcon className="w-6 h-6" />}
+            />
+            <StatsCard
+              label="Active Users"
+              value={brandsStats.active}
+              icon={<UsersIcon className="w-6 h-6" />}
+              trend={{ value: '+12%', positive: true, label: 'monthly' }}
+            />
+          </div>
+
+          {/* Content Explorer Shell */}
+          <div className="glass-card !bg-night-900/60 !p-0 overflow-hidden flex flex-col md:flex-row min-h-[700px]">
+            {/* Sidebar Navigation */}
+            <div className="w-full md:w-64 bg-black/40 border-r border-white/10 p-4 shrink-0">
+              <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-6 px-4">
+                Navigation
+              </h4>
+              <div className="space-y-1">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={clsx(
+                      'w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-sm transition-all duration-300 relative group',
+                      activeTab === tab.id
+                        ? 'bg-accent-indigo/10 text-accent-indigo'
+                        : 'text-gray-500 hover:text-white hover:bg-white/5'
+                    )}
+                  >
+                    {activeTab === tab.id && (
+                      <div className="absolute left-0 w-1 h-6 bg-accent-indigo rounded-r-full shadow-glow-indigo" />
+                    )}
+                    <span
+                      className={clsx(
+                        'transition-transform group-hover:scale-110',
+                        activeTab === tab.id ? 'opacity-100' : 'opacity-40'
+                      )}
+                    >
+                      {tab.icon}
+                    </span>
+                    <span className="uppercase tracking-widest text-[11px]">{tab.label}</span>
+                  </button>
+                ))}
               </div>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="admin-label">Meta Title</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.seo.metaTitle}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: { ...settings.seo, metaTitle: e.target.value },
-                      })
-                    }
-                    maxLength={60}
-                  />
-                  <p className="text-xs mt-1 admin-text-muted">
-                    {settings.seo.metaTitle.length}/60 caratteri
-                  </p>
-                </div>
+            </div>
 
-                <div>
-                  <label className="admin-label">Meta Description</label>
-                  <textarea
-                    className="admin-input"
-                    rows={3}
-                    value={settings.seo.metaDescription}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: { ...settings.seo, metaDescription: e.target.value },
-                      })
-                    }
-                    maxLength={160}
-                  />
-                  <p className="text-xs mt-1 admin-text-muted">
-                    {settings.seo.metaDescription.length}/160 caratteri
-                  </p>
-                </div>
+            {/* Main Workspace */}
+            <div className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-premium">
+              <div className="max-w-4xl animate-slide-up">
+                {/* SYSTEM TAB */}
+                {activeTab === 'system' && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <SettingsIcon className="w-6 h-6 text-accent-indigo" />
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                          Informazioni Sistema
+                        </h2>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <Input
+                          label="Nome Sistema"
+                          value={settings.systemName}
+                          onChange={(e) => setSettings({ ...settings, systemName: e.target.value })}
+                        />
+                        <Input
+                          label="Versione"
+                          value={settings.systemVersion}
+                          onChange={(e) =>
+                            setSettings({ ...settings, systemVersion: e.target.value })
+                          }
+                        />
+                        <div className="space-y-2">
+                          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                            Status Sistema
+                          </label>
+                          <select
+                            className="glass-input w-full"
+                            value={settings.systemStatus}
+                            onChange={(e) =>
+                              setSettings({ ...settings, systemStatus: e.target.value as any })
+                            }
+                          >
+                            <option value="operational">✅ Operational</option>
+                            <option value="maintenance">🔧 Maintenance</option>
+                            <option value="degraded">⚠️ Degraded</option>
+                          </select>
+                        </div>
+                        {settings.systemStatus === 'maintenance' && (
+                          <Input
+                            label="Messaggio Manutenzione"
+                            value={settings.maintenanceMessage || ''}
+                            onChange={(e) =>
+                              setSettings({ ...settings, maintenanceMessage: e.target.value })
+                            }
+                          />
+                        )}
+                      </div>
 
-                <div>
-                  <label className="admin-label">Meta Keywords (separati da virgola)</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.seo.metaKeywords}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: { ...settings.seo, metaKeywords: e.target.value },
-                      })
-                    }
-                  />
-                </div>
+                      <div className="pt-8 border-t border-white/5 space-y-6">
+                        <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">
+                          Feature Flags
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {[
+                            { label: 'Registrazioni', key: 'allowSignup' },
+                            { label: 'Domini Custom', key: 'allowCustomDomains' },
+                            { label: 'Google OAuth', key: 'allowGoogleOAuth' },
+                          ].map((flag) => (
+                            <label
+                              key={flag.key}
+                              className="flex items-center gap-3 group cursor-pointer"
+                            >
+                              <div className="relative w-12 h-6 bg-white/5 rounded-full border border-white/10 transition-colors group-hover:border-accent-indigo/50">
+                                <input
+                                  type="checkbox"
+                                  className="sr-only peer"
+                                  checked={(settings.features as any)[flag.key]}
+                                  onChange={(e) =>
+                                    setSettings({
+                                      ...settings,
+                                      features: {
+                                        ...settings.features,
+                                        [flag.key]: e.target.checked,
+                                      },
+                                    })
+                                  }
+                                />
+                                <div className="absolute top-1 left-1 w-4 h-4 bg-gray-500 rounded-full transition-all peer-checked:left-7 peer-checked:bg-accent-indigo peer-checked:shadow-glow-indigo" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">
+                                {flag.label}
+                              </span>
+                            </label>
+                          ))}
 
-                <div>
-                  <label className="admin-label">Open Graph Image URL</label>
-                  <input
-                    type="url"
-                    className="admin-input"
-                    value={settings.seo.ogImage || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        seo: { ...settings.seo, ogImage: e.target.value },
-                      })
-                    }
-                    placeholder="https://..."
-                  />
-                </div>
+                          <label className="flex items-center gap-3 group cursor-pointer">
+                            <div className="relative w-12 h-6 bg-rose-500/10 rounded-full border border-rose-500/20 transition-colors group-hover:border-rose-500/50">
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={settings.features.maintenanceMode}
+                                onChange={(e) =>
+                                  setSettings({
+                                    ...settings,
+                                    features: {
+                                      ...settings.features,
+                                      maintenanceMode: e.target.checked,
+                                    },
+                                  })
+                                }
+                              />
+                              <div className="absolute top-1 left-1 w-4 h-4 bg-gray-500 rounded-full transition-all peer-checked:left-7 peer-checked:bg-rose-500" />
+                            </div>
+                            <span className="text-xs font-black text-rose-500 uppercase tracking-widest group-hover:text-rose-400 transition-colors">
+                              ⚠️ Maint. Mode
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
 
-                <div className="border-t pt-4" style={{ borderColor: 'var(--admin-border)' }}>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    🤖 AI Search Engine Optimization
-                    <label className="flex items-center gap-2 cursor-pointer ml-auto">
-                      <input
-                        type="checkbox"
-                        checked={settings.seo.aiSearchOptimization.enabled}
+                {/* LANDING EDITOR TAB */}
+                {activeTab === 'landing' && (
+                  <div className="space-y-8 animate-scale-in">
+                    <div className="glass-card p-2 border-accent-indigo/30 shadow-glow-indigo">
+                      <LandingPageEditor ref={landingEditorRef} />
+                    </div>
+                  </div>
+                )}
+
+                {/* SEO TAB */}
+                {activeTab === 'seo' && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <SearchIcon className="w-6 h-6 text-accent-indigo" />
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                          SEO & AI Intelligence
+                        </h2>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="space-y-8">
+                      <Input
+                        label="Meta Title"
+                        value={settings.seo.metaTitle}
                         onChange={(e) =>
                           setSettings({
                             ...settings,
-                            seo: {
-                              ...settings.seo,
-                              aiSearchOptimization: {
-                                ...settings.seo.aiSearchOptimization,
-                                enabled: e.target.checked,
-                              },
-                            },
+                            seo: { ...settings.seo, metaTitle: e.target.value },
                           })
                         }
-                        className="w-5 h-5"
+                        maxLength={60}
+                        helperText={`${settings.seo.metaTitle.length}/60 characters`}
                       />
-                      <span className="text-sm">Abilita</span>
-                    </label>
-                  </h3>
-
-                  {settings.seo.aiSearchOptimization.enabled && (
-                    <>
-                      <div className="mb-4">
-                        <label className="admin-label">
-                          Summary per AI (breve descrizione per modelli AI)
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                          Meta Description
                         </label>
                         <textarea
-                          className="admin-input"
-                          rows={3}
-                          value={settings.seo.aiSearchOptimization.summaryText || ''}
+                          className="glass-input w-full min-h-[100px]"
+                          value={settings.seo.metaDescription}
                           onChange={(e) =>
                             setSettings({
                               ...settings,
-                              seo: {
-                                ...settings.seo,
-                                aiSearchOptimization: {
-                                  ...settings.seo.aiSearchOptimization,
-                                  summaryText: e.target.value,
-                                },
-                              },
+                              seo: { ...settings.seo, metaDescription: e.target.value },
                             })
                           }
-                          placeholder="Descrizione concisa del servizio per AI search engines"
+                          maxLength={160}
                         />
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
+                          {settings.seo.metaDescription.length}/160 characters
+                        </p>
                       </div>
 
-                      <div className="mb-4">
-                        <label className="admin-label">Key Features (uno per riga)</label>
-                        <textarea
-                          className="admin-input"
-                          rows={6}
-                          value={settings.seo.aiSearchOptimization.keyFeatures.join('\n')}
-                          onChange={(e) =>
-                            setSettings({
-                              ...settings,
-                              seo: {
-                                ...settings.seo,
-                                aiSearchOptimization: {
-                                  ...settings.seo.aiSearchOptimization,
-                                  keyFeatures: e.target.value.split('\n').filter((f) => f.trim()),
-                                },
-                              },
-                            })
-                          }
-                          placeholder="Feature 1&#10;Feature 2&#10;Feature 3"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="admin-label">
-                          Target Audience (per AI understanding)
-                        </label>
-                        <input
-                          type="text"
-                          className="admin-input"
-                          value={settings.seo.aiSearchOptimization.targetAudience || ''}
-                          onChange={(e) =>
-                            setSettings({
-                              ...settings,
-                              seo: {
-                                ...settings.seo,
-                                aiSearchOptimization: {
-                                  ...settings.seo.aiSearchOptimization,
-                                  targetAudience: e.target.value,
-                                },
-                              },
-                            })
-                          }
-                          placeholder="Es: Fotografi professionisti, agenzie fotografiche, brand"
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* COMPANY TAB */}
-        {activeTab === 'company' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <BuildingIcon className="w-6 h-6 admin-accent" />
-                <h2 className="text-2xl font-bold admin-text">Dati Azienda / Fiscali</h2>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="admin-label">Ragione Sociale</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.company.name}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, name: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Partita IVA</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.company.vatNumber || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, vatNumber: e.target.value },
-                      })
-                    }
-                    placeholder="IT12345678901"
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Codice Fiscale</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.company.taxCode || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, taxCode: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="admin-label">Indirizzo</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.company.address || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, address: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Città</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.company.city || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, city: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Paese</label>
-                  <input
-                    type="text"
-                    className="admin-input"
-                    value={settings.company.country || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, country: e.target.value },
-                      })
-                    }
-                    placeholder="IT"
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Email Aziendale</label>
-                  <input
-                    type="email"
-                    className="admin-input"
-                    value={settings.company.email}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, email: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="admin-label">Telefono</label>
-                  <input
-                    type="tel"
-                    className="admin-input"
-                    value={settings.company.phone || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, phone: e.target.value },
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="admin-label">PEC (Fatturazione Elettronica)</label>
-                  <input
-                    type="email"
-                    className="admin-input"
-                    value={settings.company.pec || ''}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        company: { ...settings.company, pec: e.target.value },
-                      })
-                    }
-                    placeholder="fatture@pec.tuodominio.it"
-                  />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* STRIPE TAB */}
-        {activeTab === 'stripe' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <CreditCardIcon className="w-6 h-6 admin-accent" />
-                <h2 className="text-2xl font-bold admin-text">Stripe Configuration</h2>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div
-                className="rounded-lg p-4 mb-6"
-                style={{
-                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                  border: '1px solid #f59e0b',
-                }}
-              >
-                <p className="text-sm admin-text">
-                  ⚠️ <strong>Attenzione:</strong> Modificare questi valori solo se sai cosa stai
-                  facendo. Gli ID Stripe devono corrispondere ai prodotti/prezzi configurati nel tuo
-                  account Stripe.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="admin-label">Stripe Price ID</label>
-                  <input
-                    type="text"
-                    className="admin-input font-mono text-sm"
-                    value={settings.stripe.priceId}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        stripe: { ...settings.stripe, priceId: e.target.value },
-                      })
-                    }
-                    placeholder="price_1ABC123XYZ"
-                  />
-                  <p className="text-xs mt-1 admin-text-muted">
-                    Trovalo in: Stripe Dashboard → Products → Il tuo prodotto → Pricing
-                  </p>
-                </div>
-
-                <div>
-                  <label className="admin-label">Stripe Product ID</label>
-                  <input
-                    type="text"
-                    className="admin-input font-mono text-sm"
-                    value={settings.stripe.productId}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        stripe: { ...settings.stripe, productId: e.target.value },
-                      })
-                    }
-                    placeholder="prod_ABC123XYZ"
-                  />
-                </div>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.stripe.webhookConfigured}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        stripe: { ...settings.stripe, webhookConfigured: e.target.checked },
-                      })
-                    }
-                    className="w-5 h-5"
-                  />
-                  <span>✅ Webhook Stripe configurato</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.stripe.testMode}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        stripe: { ...settings.stripe, testMode: e.target.checked },
-                      })
-                    }
-                    className="w-5 h-5"
-                  />
-                  <span className={settings.stripe.testMode ? 'text-yellow-400' : 'text-green-400'}>
-                    {settings.stripe.testMode ? '🧪 Test Mode' : '🚀 Production Mode'}
-                  </span>
-                </label>
-              </div>
-
-              <div className="border-t pt-4" style={{ borderColor: 'var(--admin-border)' }}>
-                <h3 className="text-lg font-semibold mb-4 admin-text">Pricing</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="admin-label">Prezzo Mensile</label>
-                    <input
-                      type="number"
-                      className="admin-input"
-                      value={pricingInputs.monthlyPrice}
-                      onChange={(e) => handlePricingInputChange('monthlyPrice', e.target.value)}
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="admin-label">Valuta</label>
-                    <select
-                      className="admin-input"
-                      value={settings.pricing.currency}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          pricing: { ...settings.pricing, currency: e.target.value },
-                        })
-                      }
-                    >
-                      <option value="EUR">EUR (€)</option>
-                      <option value="USD">USD ($)</option>
-                      <option value="GBP">GBP (£)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="admin-label">Giorni Trial Gratuito</label>
-                    <input
-                      type="number"
-                      className="admin-input"
-                      value={pricingInputs.trialDays}
-                      onChange={(e) => handlePricingInputChange('trialDays', e.target.value)}
-                      min="0"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="admin-label">Features Incluse nel Piano</label>
-                  <textarea
-                    className="admin-input"
-                    rows={6}
-                    value={settings.pricing.features.join('\n')}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        pricing: {
-                          ...settings.pricing,
-                          features: e.target.value.split('\n').filter((f) => f.trim()),
-                        },
-                      })
-                    }
-                    placeholder="Una feature per riga"
-                  />
-                  <p className="text-xs mt-1 admin-text-muted">
-                    Una feature per riga. Verranno mostrate nella landing page.
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* ANALYTICS TAB */}
-        {activeTab === 'analytics' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <BarChartIcon className="w-6 h-6 admin-accent" />
-                <h2 className="text-2xl font-bold admin-text">Analytics & Revenue</h2>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard
-                  label="Total Brands"
-                  value={settings.analytics.totalBrands}
-                  icon={<UsersIcon className="w-6 h-6 admin-accent" />}
-                  iconBgColor="bg-blue-100"
-                  iconColor="text-blue-600"
-                />
-
-                <StatsCard
-                  label="Active Brands"
-                  value={settings.analytics.activeBrands}
-                  icon={<CheckCircleIcon className="w-6 h-6 admin-accent" />}
-                  iconBgColor="bg-green-100"
-                  iconColor="text-green-600"
-                />
-
-                <StatsCard
-                  label="Monthly Revenue"
-                  value={`€${settings.analytics.monthlyRevenue.toFixed(2)}`}
-                  icon={<TrendingUpIcon className="w-6 h-6 admin-accent" />}
-                  iconBgColor="bg-purple-100"
-                  iconColor="text-purple-600"
-                />
-
-                <StatsCard
-                  label="Total Revenue"
-                  value={`€${settings.analytics.totalRevenue.toFixed(2)}`}
-                  icon={<CreditCardIcon className="w-6 h-6 admin-accent" />}
-                  iconBgColor="bg-orange-100"
-                  iconColor="text-orange-600"
-                />
-              </div>
-
-              {/* Brands Breakdown Stats */}
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold admin-text">Breakdown Brands</h3>
-                </CardHeader>
-                <CardBody>
-                  {brandsStatsLoading ? (
-                    <p className="text-sm admin-text-muted">
-                      Aggiornamento statistiche in corso...
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <div>
-                        <p className="text-sm mb-2 admin-text-muted">Total</p>
-                        <p className="text-2xl font-bold admin-text">{brandsStats.total}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm mb-2 admin-text-muted">Active</p>
-                        <p className="text-2xl font-bold text-green-400">{brandsStats.active}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm mb-2 admin-text-muted">Pending</p>
-                        <p className="text-2xl font-bold text-yellow-400">{brandsStats.pending}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm mb-2 admin-text-muted">Suspended</p>
-                        <p className="text-2xl font-bold text-red-400">{brandsStats.suspended}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardBody>
-              </Card>
-
-              {/* Google Analytics Input */}
-              <div>
-                <label className="admin-label">Google Analytics ID (Landing Page)</label>
-                <input
-                  type="text"
-                  className="admin-input"
-                  value={settings.analytics.googleAnalyticsId || ''}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      analytics: { ...settings.analytics, googleAnalyticsId: e.target.value },
-                    })
-                  }
-                  placeholder="G-XXXXXXXXXX"
-                />
-                <p className="text-xs mt-1">Verrà usato nella landing page pubblica</p>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* BRANDS TAB */}
-        {activeTab === 'brands' && <BrandsManager />}
-
-        {/* LANDING PAGE TAB */}
-        {activeTab === 'landing' && <LandingPageEditor ref={landingEditorRef} />}
-
-        {/* LOGS TAB */}
-        {activeTab === 'logs' && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <FileTextIcon className="w-6 h-4" />
-                <h2 className="text-2xl font-bold admin-text">Activity Logs</h2>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-6">
-              <div className="space-y-3">
-                {activityLogs.length === 0 ? (
-                  <p className="admin-text-muted">Nessun log disponibile</p>
-                ) : (
-                  activityLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="rounded-lg p-4 flex items-start gap-3"
-                      style={{
-                        backgroundColor: 'var(--admin-surface)',
-                        border: '1px solid var(--admin-border)',
-                      }}
-                    >
-                      <span className="text-2xl">
-                        {log.type === 'brand_created'
-                          ? '🎨'
-                          : log.type === 'brand_suspended'
-                            ? '⛔'
-                            : log.type === 'settings_updated'
-                              ? '⚙️'
-                              : log.type === 'payment_received'
-                                ? '💰'
-                                : '❌'}
-                      </span>
-                      <div className="flex-1">
+                      <div className="pt-8 border-t border-white/5 space-y-6">
                         <div className="flex items-center justify-between">
-                          <p className="font-semibold admin-text">{log.description}</p>
-                          <p className="text-xs admin-text-muted">
-                            {new Date(log.timestamp).toLocaleString('it-IT')}
-                          </p>
+                          <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em]">
+                            🤖 AI Optimization
+                          </h3>
+                          <label className="flex items-center gap-3 cursor-pointer group">
+                            <span className="text-[10px] font-bold text-gray-500 uppercase group-hover:text-white transition-colors">
+                              Enable AI Search
+                            </span>
+                            <div className="relative w-10 h-5 bg-white/5 rounded-full border border-white/10">
+                              <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={settings.seo.aiSearchOptimization.enabled}
+                                onChange={(e) =>
+                                  setSettings({
+                                    ...settings,
+                                    seo: {
+                                      ...settings.seo,
+                                      aiSearchOptimization: {
+                                        ...settings.seo.aiSearchOptimization,
+                                        enabled: e.target.checked,
+                                      },
+                                    },
+                                  })
+                                }
+                              />
+                              <div className="absolute top-0.5 left-0.5 w-3.5 h-3.5 bg-gray-500 rounded-full transition-all peer-checked:left-6 peer-checked:bg-accent-indigo" />
+                            </div>
+                          </label>
                         </div>
-                        <p className="text-sm mt-1 admin-text-muted">Actor: {log.actor}</p>
-                        {log.brandId && (
-                          <p className="text-xs mt-1 admin-text-muted">Brand: {log.brandId}</p>
+
+                        {settings.seo.aiSearchOptimization.enabled && (
+                          <div className="space-y-6 animate-slide-up">
+                            <Input
+                              label="Target Audience"
+                              value={settings.seo.aiSearchOptimization.targetAudience}
+                              onChange={(e) =>
+                                setSettings({
+                                  ...settings,
+                                  seo: {
+                                    ...settings.seo,
+                                    aiSearchOptimization: {
+                                      ...settings.seo.aiSearchOptimization,
+                                      targetAudience: e.target.value,
+                                    },
+                                  },
+                                })
+                              }
+                            />
+                            <div className="space-y-2">
+                              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                                Key Features (One per line)
+                              </label>
+                              <textarea
+                                className="glass-input w-full min-h-[150px]"
+                                value={settings.seo.aiSearchOptimization.keyFeatures.join('\n')}
+                                onChange={(e) =>
+                                  setSettings({
+                                    ...settings,
+                                    seo: {
+                                      ...settings.seo,
+                                      aiSearchOptimization: {
+                                        ...settings.seo.aiSearchOptimization,
+                                        keyFeatures: e.target.value
+                                          .split('\n')
+                                          .filter((f) => f.trim()),
+                                      },
+                                    },
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
                         )}
                       </div>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* COMPANY TAB */}
+                {activeTab === 'company' && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <BuildingIcon className="w-6 h-6 text-accent-indigo" />
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                          Identity & Fiscal
+                        </h2>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="md:col-span-2">
+                          <Input
+                            label="Legal Entity Name"
+                            value={settings.company.name}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                company: { ...settings.company, name: e.target.value },
+                              })
+                            }
+                          />
+                        </div>
+                        <Input
+                          label="VAT Number"
+                          value={settings.company.vatNumber}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              company: { ...settings.company, vatNumber: e.target.value },
+                            })
+                          }
+                        />
+                        <Input
+                          label="Tax Code"
+                          value={settings.company.taxCode}
+                          onChange={(e) =>
+                            setSettings({
+                              ...settings,
+                              company: { ...settings.company, taxCode: e.target.value },
+                            })
+                          }
+                        />
+                        <div className="md:col-span-2">
+                          <Input
+                            label="Legal Address"
+                            value={settings.company.address}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                company: { ...settings.company, address: e.target.value },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {activeTab === 'stripe' && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <CreditCardIcon className="w-6 h-6 text-accent-indigo" />
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                          Financial Interface (Stripe)
+                        </h2>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <Input label="Mode" value={settings.stripe.mode} readOnly disabled />
+                        <Input
+                          label="Monthly Price (€)"
+                          type="number"
+                          value={pricingInputs.monthlyPrice}
+                          onChange={(e) => handlePricingInputChange('monthlyPrice', e.target.value)}
+                        />
+                        <Input
+                          label="Trial Period (Days)"
+                          type="number"
+                          value={pricingInputs.trialDays}
+                          onChange={(e) => handlePricingInputChange('trialDays', e.target.value)}
+                        />
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {activeTab === 'analytics' && (
+                  <div className="space-y-8 animate-slide-up">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <StatsCard
+                        label="Total Revenue"
+                        value={`€ ${settings.analytics.totalRevenue.toFixed(2)}`}
+                        icon={<TrendingUpIcon className="w-6 h-6" />}
+                        trend={{ value: '+18.2%', positive: true }}
+                      />
+                      <StatsCard
+                        label="Monthly Revenue"
+                        value={`€ ${settings.analytics.monthlyRevenue.toFixed(2)}`}
+                        icon={<TrendingUpIcon className="w-6 h-6" />}
+                      />
+                      <StatsCard
+                        label="Active Brands"
+                        value={settings.analytics.activeBrands}
+                        icon={<UsersIcon className="w-6 h-6" />}
+                        trend={{ value: '+12%', positive: true }}
+                      />
                     </div>
-                  ))
+                    <Card>
+                      <CardHeader>
+                        <h3 className="text-lg font-black text-white uppercase tracking-tight">
+                          Platform Growth
+                        </h3>
+                      </CardHeader>
+                      <CardBody>
+                        {brandsStatsLoading ? (
+                          <div className="h-64 flex items-center justify-center">
+                            <span className="w-8 h-8 border-2 border-accent-indigo border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                            {[
+                              { label: 'Total', value: brandsStats.total, color: 'text-white' },
+                              {
+                                label: 'Active',
+                                value: brandsStats.active,
+                                color: 'text-emerald-400',
+                              },
+                              {
+                                label: 'Pending',
+                                value: brandsStats.pending,
+                                color: 'text-yellow-400',
+                              },
+                              {
+                                label: 'Suspended',
+                                value: brandsStats.suspended,
+                                color: 'text-rose-400',
+                              },
+                            ].map((item) => (
+                              <div
+                                key={item.label}
+                                className="text-center p-6 bg-white/2 rounded-2xl border border-white/5"
+                              >
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">
+                                  {item.label}
+                                </p>
+                                <p className={clsx('text-3xl font-black', item.color)}>
+                                  {item.value}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardBody>
+                    </Card>
+                  </div>
+                )}
+
+                {activeTab === 'brands' && (
+                  <div className="animate-scale-in">
+                    <BrandsManager />
+                  </div>
+                )}
+
+                {activeTab === 'logs' && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <FileTextIcon className="w-6 h-6 text-accent-indigo" />
+                        <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                          System Event Logs
+                        </h2>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <div className="space-y-4">
+                        {activityLogs.length === 0 ? (
+                          <div className="text-center py-12 text-gray-600 uppercase tracking-widest text-xs font-bold">
+                            No events recorded.
+                          </div>
+                        ) : (
+                          activityLogs.map((log) => (
+                            <div
+                              key={log.id}
+                              className="flex items-center gap-4 p-4 bg-white/2 rounded-xl border border-white/5 hover:bg-white/5 transition-colors group"
+                            >
+                              <div className="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center text-lg border border-white/10 group-hover:border-accent-indigo/30 group-hover:shadow-glow-indigo transition-all">
+                                {log.type === 'brand_created'
+                                  ? '🎨'
+                                  : log.type === 'brand_suspended'
+                                    ? '⛔'
+                                    : '⚙️'}
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-bold text-gray-200">{log.description}</p>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter mt-1">
+                                  {new Date(log.timestamp).toLocaleString()} • {log.actor}
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
                 )}
               </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {/* Action Buttons */}
-        <div className="mt-8 flex justify-end gap-4">
-          <Button variant="outline" onClick={() => navigate('/')} className="hover-lift">
-            <HomeIcon className="w-4 h-4 mr-2" />
-            Torna alla Home
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              if (activeTab === 'landing') {
-                landingEditorRef.current?.save();
-              } else {
-                handleSaveSettings();
-              }
-            }}
-            disabled={activeTab === 'landing' ? landingEditorRef.current?.isSaving : saving}
-            className="hover-lift"
-          >
-            <SaveIcon className="w-4 h-4 mr-2" />
-            {activeTab === 'landing'
-              ? landingEditorRef.current?.isSaving
-                ? 'Salvataggio Landing...'
-                : 'Salva Landing'
-              : saving
-                ? 'Salvataggio...'
-                : 'Salva Impostazioni'}
-          </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

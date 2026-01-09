@@ -1,0 +1,19 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#grad1)" />
+  <circle cx="260" cy="200" r="140" fill="#f97316" opacity="0.4" />
+  <circle cx="880" cy="260" r="180" fill="#22c55e" opacity="0.3" />
+  <circle cx="640" cy="580" r="200" fill="#a855f7" opacity="0.35" />
+  <text x="50%" y="45%" text-anchor="middle" fill="#f9fafb" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="72" font-weight="700">
+    Club Dance Floor
+  </text>
+  <text x="50%" y="58%" text-anchor="middle" fill="#e5e7eb" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="32">
+    Luci, musica e atmosfera da serata
+  </text>
+</svg>
+

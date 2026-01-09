@@ -79,132 +79,156 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onResetPassword }) => 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
-      <div className="bg-gray-800/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-gray-700/50 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+    <div className="w-full">
+      <form onSubmit={handleSubmit} className="space-y-6 w-full group animate-scale-in">
+        <div className="text-center mb-10">
+          <div className="relative inline-block mb-6">
+            <div className="absolute inset-0 bg-accent-rose blur-xl opacity-30 animate-pulse" />
+            <div className="relative w-20 h-20 bg-gradient-to-br from-accent-rose to-accent-pink rounded-2xl flex items-center justify-center shadow-2xl border border-white/20">
+              <svg
+                className="w-10 h-10 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                />
+              </svg>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Admin Access</h1>
-          <p className="text-gray-400">Enter credentials to access admin panel</p>
+          <h1 className="text-3xl font-black text-white mb-2 tracking-tight uppercase">
+            Admin Access
+          </h1>
+          <p className="text-gray-500 font-medium tracking-wide text-xs uppercase">
+            Secure Authentication Gateway
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors disabled:opacity-50"
-              placeholder="admin@gallery.local"
-              autoComplete="email"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={isLoading}
-              className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-colors disabled:opacity-50"
-              placeholder="Enter admin password"
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && (
-            <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading || !email.trim() || !password.trim()}
-            className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        <div className="space-y-2">
+          <label
+            htmlFor="email"
+            className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-widest"
           >
-            {isLoading ? (
-              <>
-                <Spinner size="h-5 w-5" />
-                Verifying...
-              </>
-            ) : (
-              'Access Admin Panel'
-            )}
-          </button>
-        </form>
+            Email Address
+          </label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+            className="glass-input w-full"
+            placeholder="admin@gallery.local"
+            autoComplete="email"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            htmlFor="password"
+            className="block text-xs font-bold text-gray-400 mb-1 ml-1 uppercase tracking-widest"
+          >
+            Identity Key
+          </label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+            className="glass-input w-full"
+            placeholder="••••••••"
+            autoComplete="current-password"
+          />
+        </div>
+
+        {error && (
+          <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl p-4 text-sm animate-shake">
+            <div className="flex items-center gap-3">
+              <span className="text-lg">⚠️</span>
+              <p className="font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading || !email.trim() || !password.trim()}
+          className="btn-neon-rose w-full mt-4 !py-4 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+        >
+          {isLoading ? (
+            <>
+              <Spinner size="h-5 w-5" />
+              <span>Verificando...</span>
+            </>
+          ) : (
+            <>
+              <span className="text-lg">⚡</span>
+              <span>Proprietario Accesso</span>
+            </>
+          )}
+        </button>
 
         {onResetPassword && (
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <button
               type="button"
               onClick={openResetModal}
-              className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
+              className="text-xs font-bold text-accent-indigo hover:text-white transition-all uppercase tracking-widest"
             >
               Password dimenticata?
             </button>
           </div>
         )}
 
-        <div className="mt-6 text-center text-xs text-gray-500">
-          <p>🔒 Secure admin access with Firebase Authentication</p>
+        <div className="mt-8 text-center">
+          <p className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em]">
+            🔒 encrypted & self-hosted
+          </p>
         </div>
-      </div>
+      </form>
 
       {/* Password Reset Modal */}
       {showResetModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-full max-w-md animate-slide-up">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <svg
-                  className="w-8 h-8 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
+        <div className="fixed inset-0 bg-night-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="glass-card p-10 max-w-md w-full border-white/20 animate-scale-in">
+            <div className="text-center mb-8">
+              <div className="relative inline-block mb-6">
+                <div className="absolute inset-0 bg-accent-indigo blur-xl opacity-30" />
+                <div className="relative w-16 h-16 bg-gradient-to-br from-accent-indigo to-accent-violet rounded-2xl flex items-center justify-center shadow-lg border border-white/20 mx-auto">
+                  <svg
+                    className="w-8 h-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Recupera Password</h2>
-              <p className="text-gray-400 text-sm">
-                Inserisci la tua email per ricevere il link di reset
+              <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">
+                Recovery System
+              </h2>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">
+                Insert protocol address
               </p>
             </div>
 
             {!resetSuccess ? (
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div>
+              <form onSubmit={handleResetPassword} className="space-y-6">
+                <div className="space-y-2">
                   <label
                     htmlFor="reset-email"
-                    className="block text-sm font-medium text-gray-300 mb-2"
+                    className="block text-xs font-bold text-gray-400 ml-1 uppercase tracking-widest"
                   >
                     Email
                   </label>
@@ -214,48 +238,40 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onResetPassword }) => 
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
                     disabled={resetLoading}
-                    className="w-full bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:opacity-50"
+                    className="glass-input w-full"
                     placeholder="admin@gallery.local"
-                    autoComplete="email"
                   />
                 </div>
 
                 {resetError && (
-                  <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
+                  <div className="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl text-xs">
                     {resetError}
                   </div>
                 )}
 
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    disabled={resetLoading || !resetEmail.trim()}
+                    className="btn-neon-indigo w-full !py-3.5"
+                  >
+                    {resetLoading ? 'Sending...' : 'Richiedi Reset'}
+                  </button>
                   <button
                     type="button"
                     onClick={closeResetModal}
                     disabled={resetLoading}
-                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
+                    className="text-xs font-bold text-gray-500 hover:text-white transition-all uppercase tracking-widest mt-2"
                   >
-                    Annulla
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={resetLoading || !resetEmail.trim()}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {resetLoading ? (
-                      <>
-                        <Spinner size="h-5 w-5" />
-                        Invio...
-                      </>
-                    ) : (
-                      'Invia Email'
-                    )}
+                    Cancel
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center">
+              <div className="text-center py-4">
+                <div className="w-20 h-20 mx-auto mb-6 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/30">
                   <svg
-                    className="w-8 h-8 text-green-400"
+                    className="w-10 h-10 text-emerald-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -268,19 +284,14 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin, onResetPassword }) => 
                     />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">Email Inviata!</h3>
-                <p className="text-gray-400 text-sm mb-6">
-                  Controlla la tua casella email per il link di reset della password.
-                  <br />
-                  <span className="text-xs text-gray-500 mt-2 block">
-                    (Controlla anche lo spam)
-                  </span>
+                <h3 className="text-xl font-black text-white mb-3 uppercase tracking-tight">
+                  Access Link Sent!
+                </h3>
+                <p className="text-gray-500 text-sm font-medium mb-8">
+                  Protocol established. Check your digital terminal (and spam).
                 </p>
-                <button
-                  onClick={closeResetModal}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
-                >
-                  Chiudi
+                <button onClick={closeResetModal} className="btn-neon-rose w-full">
+                  Return to Base
                 </button>
               </div>
             )}
