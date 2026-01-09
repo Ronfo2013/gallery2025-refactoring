@@ -5,10 +5,11 @@
  * Fornisce funzionalità di backup e restore per la configurazione della gallery.
  */
 
+import { logger } from '@/utils/logger';
 import { deleteObject, getDownloadURL, listAll, ref, uploadBytes } from 'firebase/storage';
 import { storage } from '../firebaseConfig';
+import { storagePaths } from '../src/lib/storagePaths';
 import * as bucketService from './bucketService';
-import { logger } from '@/utils/logger';
 
 // Tipi per il backup
 export interface BackupData {
@@ -55,7 +56,7 @@ export const createCloudBackup = async (): Promise<string> => {
 
     // Nome file con timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFileName = `backups/config-backup-${timestamp}.json`;
+    const backupFileName = storagePaths.backup(`config-backup-${timestamp}.json`);
 
     // Converti in blob
     const backupBlob = new Blob([JSON.stringify(backup, null, 2)], {
@@ -86,7 +87,7 @@ export const createCloudBackup = async (): Promise<string> => {
  */
 export const getCloudBackups = async (): Promise<BackupInfo[]> => {
   try {
-    const backupsRef = ref(storage, 'backups/');
+    const backupsRef = ref(storage, storagePaths.backupsFolder());
     const backupsList = await listAll(backupsRef);
 
     const backups = await Promise.all(
@@ -151,7 +152,7 @@ export const restoreFromCloudBackup = async (backupUrl: string): Promise<void> =
  */
 const cleanupOldCloudBackups = async (): Promise<void> => {
   try {
-    const backupsRef = ref(storage, 'backups/');
+    const backupsRef = ref(storage, storagePaths.backupsFolder());
     const backupsList = await listAll(backupsRef);
 
     const configBackups = backupsList.items

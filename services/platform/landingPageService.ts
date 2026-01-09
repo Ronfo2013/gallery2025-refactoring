@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../../firebaseConfig';
+import { storagePaths } from '../../src/lib/storagePaths';
 import { LandingPageSettings } from '../../types';
 
 const LANDING_PAGE_DOC = 'platform_settings/landing_page';
@@ -69,12 +70,12 @@ export async function uploadLandingImage(
   path: string
 ): Promise<{ url: string; path: string }> {
   try {
-    const storageRef = ref(storage, `platform/landing/${path}`);
+    const storageRef = ref(storage, storagePaths.landingAsset(path));
     await uploadBytes(storageRef, file);
     const url = await getDownloadURL(storageRef);
 
     logger.info('✅ Landing image uploaded:', path);
-    return { url, path: `platform/landing/${path}` };
+    return { url, path: storagePaths.landingAsset(path) };
   } catch (error) {
     logger.error('❌ Error uploading landing image:', error);
     throw error;
