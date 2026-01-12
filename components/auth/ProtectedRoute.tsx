@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
@@ -37,7 +38,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
           setIsAuthorized(superUserDoc.exists());
         }
       } catch (error) {
-        console.error('Error checking authorization:', error);
+        logger.error('Error checking authorization:', error);
         setIsAuthorized(false);
       }
     };

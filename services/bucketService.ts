@@ -2,6 +2,7 @@ import { logger } from '@/utils/logger';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../firebaseConfig';
+import { replaceFilenameInPath, storagePaths } from '../src/lib/storagePaths';
 import { generateShortId } from '../src/utils/uniqueId';
 import { Album, SiteSettings } from '../types';
 
@@ -117,7 +118,7 @@ export const getConfig = async (): Promise<AppConfig> => {
       const initialConfig = generateInitialData();
       try {
         await saveConfig(initialConfig);
-      } catch (e) {
+      } catch {
         // This is now allowed by rules, but if it fails for other reasons, keep it quiet
         logger.info('ℹ️ Initial config save skipped (likely non-admin user or already exists)');
       }
@@ -209,7 +210,8 @@ export const uploadFile = async (
     // Generate unique path with UUID to prevent collisions
     // MULTI-BRAND: Use brands/{brandId}/uploads/ path
     const uniqueId = generateShortId();
-    const path = `brands/${brandId}/uploads/${Date.now()}-${uniqueId}-${safeName}`;
+    const filename = `${Date.now()}-${uniqueId}-${safeName}`;
+    const path = storagePaths.brandUploadSpecific(brandId, filename);
 
     // Create a reference to the file location
     const storageRef = ref(storage, path);
@@ -254,9 +256,9 @@ export const deleteFile = async (path: string): Promise<void> => {
     // Delete all processed versions
     const baseFileName = path.split('/').pop()!;
     const processedFiles = [
-      path.replace(baseFileName, baseFileName.replace(/\.[^.]+$/, '_optimized.webp')),
-      path.replace(baseFileName, baseFileName.replace(/\.[^.]+$/, '_thumb_200.webp')),
-      path.replace(baseFileName, baseFileName.replace(/\.[^.]+$/, '_thumb_800.webp')),
+      replaceFilenameInPath(path, baseFileName.replace(/\.[^.]+$/, '_optimized.webp')),
+      replaceFilenameInPath(path, baseFileName.replace(/\.[^.]+$/, '_thumb_200.webp')),
+      replaceFilenameInPath(path, baseFileName.replace(/\.[^.]+$/, '_thumb_800.webp')),
     ];
 
     // 🔥 Delete all processed files in parallel

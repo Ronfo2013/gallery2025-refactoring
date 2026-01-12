@@ -9,6 +9,7 @@ import {
   generateSeoSuggestions,
   searchPhotosInAlbum,
 } from '../services/geminiService';
+import { replaceFilenameInPath, storagePaths } from '../src/lib/storagePaths';
 import { generateAlbumId, generatePhotoId } from '../src/utils/uniqueId';
 import { Album, Photo, SeoSettings, SiteSettings } from '../types';
 
@@ -552,12 +553,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return {};
     }
 
-    // Get directory path and base filename
+    // Get base filename for WebP variant naming
     const pathParts = photo.path.split('/');
     const baseFileName = pathParts[pathParts.length - 1];
-    const dirPath = pathParts.slice(0, -1).join('/'); // Keep full directory path (e.g., brands/{brandId}/uploads)
 
-    // 🚨 FIX: Use full path with brand directory, just replace filename
+    // Use replaceFilenameInPath to maintain directory structure
     // Cloud Function: fileName.replace(/\.[^.]+$/, `${suffix}.webp`)
 
     const urls: { optimizedUrl?: string; thumbUrl?: string; mediumUrl?: string } = {};
@@ -566,7 +566,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Check for optimized WebP (matches Cloud Function naming)
       try {
         const optimizedFileName = baseFileName.replace(/\.[^.]+$/, '_optimized.webp');
-        const optimizedRef = ref(storage, `${dirPath}/${optimizedFileName}`);
+        const optimizedRef = ref(storage, replaceFilenameInPath(photo.path, optimizedFileName));
         urls.optimizedUrl = await getDownloadURL(optimizedRef);
       } catch {
         /* Not ready yet */
@@ -575,7 +575,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Check for 200px thumbnail
       try {
         const thumbFileName = baseFileName.replace(/\.[^.]+$/, '_thumb_200.webp');
-        const thumbRef = ref(storage, `${dirPath}/${thumbFileName}`);
+        const thumbRef = ref(storage, replaceFilenameInPath(photo.path, thumbFileName));
         urls.thumbUrl = await getDownloadURL(thumbRef);
       } catch {
         /* Not ready yet */
@@ -584,7 +584,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // Check for 800px thumbnail
       try {
         const mediumFileName = baseFileName.replace(/\.[^.]+$/, '_thumb_800.webp');
-        const mediumRef = ref(storage, `${dirPath}/${mediumFileName}`);
+        const mediumRef = ref(storage, replaceFilenameInPath(photo.path, mediumFileName));
         urls.mediumUrl = await getDownloadURL(mediumRef);
       } catch {
         /* Not ready yet */
@@ -929,7 +929,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       logger.info('🔄 Starting recovery from Firebase Storage...');
 
       // List all files in uploads folder
-      const uploadsRef = ref(storage, 'uploads/');
+      const uploadsRef = ref(storage, storagePaths.legacyUpload(''));
       const result = await listAll(uploadsRef);
 
       logger.info(`📁 Found ${result.items.length} files in Storage`);
@@ -970,20 +970,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             try {
               optimizedUrl = await getDownloadURL(
-                ref(storage, `uploads/${baseName}_optimized.webp`)
+                ref(storage, storagePaths.legacyUpload(`${baseName}_optimized.webp`))
               );
             } catch {
               /* Optimized not found */
             }
 
             try {
-              thumbUrl = await getDownloadURL(ref(storage, `uploads/${baseName}_thumb_200.webp`));
+              thumbUrl = await getDownloadURL(
+                ref(storage, storagePaths.legacyUpload(`${baseName}_thumb_200.webp`))
+              );
             } catch {
               /* Thumb not found */
             }
 
             try {
-              mediumUrl = await getDownloadURL(ref(storage, `uploads/${baseName}_thumb_800.webp`));
+              mediumUrl = await getDownloadURL(
+                ref(storage, storagePaths.legacyUpload(`${baseName}_thumb_800.webp`))
+              );
             } catch {
               /* Medium not found */
             }

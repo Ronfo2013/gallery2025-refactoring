@@ -14,7 +14,10 @@ interface HeroSectionProps {
   primaryColor?: string;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ data, primaryColor = '#3b82f6' }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({
+  data,
+  primaryColor: _primaryColor = '#3b82f6',
+}) => {
   const { siteSettings } = useAppContext();
   const { user } = useFirebaseAuth();
   const [email, setEmail] = useState('');

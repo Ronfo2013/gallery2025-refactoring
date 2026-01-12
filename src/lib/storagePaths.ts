@@ -23,6 +23,13 @@ export const storagePaths = {
   brandSpecific: (brandId: string, filename: string) => `brands/${brandId}/${filename}`,
 
   /**
+   * Upload specifico per un brand nella cartella uploads
+   * Path: brands/{brandId}/uploads/{filename}
+   */
+  brandUploadSpecific: (brandId: string, filename: string) =>
+    `brands/${brandId}/uploads/${filename}`,
+
+  /**
    * Album photos
    * Path: brands/{brandId}/albums/{albumId}/{filename}
    */
@@ -106,4 +113,14 @@ export function generateUniqueFilename(originalFilename: string): string {
   const nameWithoutExt = originalFilename.replace(/\.[^/.]+$/, '');
 
   return `${timestamp}-${randomStr}-${nameWithoutExt}.${extension}`;
+}
+
+/**
+ * Sostituisce il filename in un path esistente mantenendo la directory
+ * @example replaceFilenameInPath('folder/file.jpg', 'new.png') -> 'folder/new.png'
+ */
+export function replaceFilenameInPath(fullPath: string, newFilename: string): string {
+  const parts = fullPath.split('/');
+  const dirPath = parts.slice(0, -1).join('/');
+  return dirPath ? `${dirPath}/${newFilename}` : newFilename;
 }
